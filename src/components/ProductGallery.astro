@@ -28,7 +28,7 @@ const single = sorted.length <= 1;
           <Picture
             src={img.src}
             alt={img.alt}
-            formats={['avif', 'webp']}
+            formats={['webp']}
             fallbackFormat="webp"
             widths={[400, 600, 800, 1200].filter((w) => w <= img.src.width)}
             sizes={single ? '(min-width: 1024px) 40vw, 88vw' : '(min-width: 1024px) 30vw, 88vw'}
