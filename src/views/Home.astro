@@ -1,0 +1,562 @@
+---
+import { Image, getImage } from 'astro:assets';
+import { getEntry } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Icon from '../components/Icon.astro';
+import Photo from '../components/Photo.astro';
+import ProductCard from '../components/ProductCard.astro';
+import SectionHeading from '../components/SectionHeading.astro';
+import PressFeature from '../components/PressFeature.astro';
+import { getProducts, getProductCollections, productsIn } from '../lib/catalog';
+import { site } from '../../config/site';
+import { useI18n } from '../i18n';
+import VideoCard from '../components/VideoCard.astro';
+import runwayPoster from '../assets/media/posters/backstage.jpg';
+import runwayStill from '../assets/media/show/show-04.jpg';
+import cover from '../assets/brand/cover_katriel.jpg';
+import coverMobile from '../assets/brand/cover_katriel-mobile.jpg';
+import crown from '../assets/brand/crown-black.png';
+import founderPhoto from '../assets/media/danijela-cover.jpg';
+import CelebritiesStrip from '../components/CelebritiesStrip.astro';
+
+// Hero: wide photo on tablet/desktop, portrait crop centered on the face on phones (art direction).
+const deskWidths = [768, 1280, 1920, 2544];
+const mobWidths = [480, 720, 937];
+const [heroAvif, heroWebp, heroFallback, heroMobileAvif, heroMobileWebp] = await Promise.all([
+  getImage({ src: cover, widths: deskWidths, format: 'avif' }),
+  getImage({ src: cover, widths: deskWidths, format: 'webp' }),
+  getImage({ src: cover, width: 1920, format: 'jpg' }),
+  getImage({ src: coverMobile, widths: mobWidths, format: 'avif' }),
+  getImage({ src: coverMobile, widths: mobWidths, format: 'webp' }),
+]);
+
+const { t, l, lang } = useI18n(Astro);
+const h = t.home;
+
+const products = await getProducts();
+// The Edit: 4 `featured` pieces per tab; falls back to the first pieces in shop order.
+const editItems = (category: string) => {
+  const inCat = productsIn(products, category);
+  const featured = inCat.filter((p) => p.data.featured);
+  return [...featured, ...inCat.filter((p) => !p.data.featured)].slice(0, 4);
+};
+const edit = [
+  { id: 'clothing', label: h.tiles.clothing, items: editItems('clothing') },
+  { id: 'jewelry', label: h.tiles.jewelry, items: editItems('jewelry') },
+];
+
+// "The House of Katriel" tiles. Headpieces live in the Accessories category.
+const tiles = await Promise.all(
+  [
+    { name: h.tiles.clothing, category: 'clothing' },
+    { name: h.tiles.jewelry, category: 'jewelry' },
+    { name: h.tiles.headpieces, category: 'accessories' },
+    { name: h.tiles.bridal, category: 'bridal' },
+  ].map(async (tile) => {
+    const entry = await getEntry('categories', tile.category);
+    return { ...tile, href: l(`/shop/${tile.category}/`), image: entry?.data.tileImage, label: entry?.data.tilePlaceholder };
+  }),
+);
+
+const collections = await getProductCollections();
+---
+
+<BaseLayout headerOverlay>
+  <!-- Hero -->
+  <section class="hero on-dark">
+    <div class="hero__media">
+      <picture>
+        <source media="(max-width: 767px)" type="image/avif" srcset={heroMobileAvif.srcSet.attribute} sizes="100vw" />
+        <source media="(max-width: 767px)" type="image/webp" srcset={heroMobileWebp.srcSet.attribute} sizes="100vw" />
+        <source type="image/avif" srcset={heroAvif.srcSet.attribute} sizes="100vw" />
+        <source type="image/webp" srcset={heroWebp.srcSet.attribute} sizes="100vw" />
+        <img
+          src={heroFallback.src}
+          width={cover.width}
+          height={cover.height}
+          alt={h.heroAlt}
+          class="hero__img"
+          loading="eager"
+          fetchpriority="high"
+          decoding="async"
+        />
+      </picture>
+    </div>
+    <div class="hero__content">
+      <p class="eyebrow hero__eyebrow"><span aria-hidden="true"></span>{h.heroEyebrow}</p>
+      <h1 class="h-hero">{h.heroTitle1}<br /><em>{h.heroTitle2}</em></h1>
+      <p class="hero__text">{h.heroText}</p>
+      <div class="hero__actions">
+        <a class="btn btn--light" href={l('/shop/clothing/')}>{h.shopClothing}</a>
+        <a class="btn btn--outline-light" href={l('/shop/jewelry/')}>{h.shopJewelry}</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Press -->
+  <section class="section press-section" aria-labelledby="vogue-title">
+    <div class="container">
+      <PressFeature link={{ href: l('/press/'), label: t.press.seeAll }} />
+    </div>
+  </section>
+
+  <!-- Categories -->
+  <section class="house" aria-labelledby="house-title">
+    <div class="container">
+      <SectionHeading eyebrow={h.houseEyebrow} title={h.houseTitle} id="house-title" align="center" />
+      <ul role="list" class="tiles">
+        {tiles.map((tile) => (
+          <li>
+            <a class="tile" href={tile.href}>
+              <Photo src={tile.image} alt="" label={tile.label} />
+              <span class="tile__row">
+                <span class="tile__name">{tile.name}</span>
+                <span class="tile__cta">{h.shopNow}</span>
+              </span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <!-- The Edit -->
+  <section class="section section--stone" aria-labelledby="picks-title">
+    <div class="container">
+      <SectionHeading eyebrow={h.editEyebrow} title={h.editTitle} id="picks-title">
+        <div class="tabs" role="tablist" aria-label={h.editTabs}>
+          {edit.map((tab, i) => (
+            <button
+              type="button"
+              role="tab"
+              class="tabs__tab"
+              id={`edit-tab-${tab.id}`}
+              aria-controls={`edit-panel-${tab.id}`}
+              aria-selected={i === 0 ? 'true' : 'false'}
+              tabindex={i === 0 ? 0 : -1}
+              data-edit-tab
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+        <a class="view-all" href={l('/shop/clothing/')} data-edit-link>{h.viewAll}<Icon name="arrow" size={18} /></a>
+      </SectionHeading>
+
+      {edit.map((tab, i) => (
+        <div
+          role="tabpanel"
+          id={`edit-panel-${tab.id}`}
+          aria-labelledby={`edit-tab-${tab.id}`}
+          hidden={i !== 0}
+          data-href={l(`/shop/${tab.id}/`)}
+        >
+          <ul role="list" class="grid">
+            {tab.items.map((p) => (
+              <li><ProductCard product={p} tone="sand-2" /></li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- Our story -->
+  <section class="section atelier" aria-labelledby="atelier-title">
+    <div class="container atelier__grid">
+      <Photo src={founderPhoto} alt={t.story.founderAlt} ratio="3/4" tone="sand-2" sizes="(min-width: 768px) 42vw, 100vw" />
+      <div class="atelier__text">
+        <Image src={crown} alt="" width={64} densities={[1, 2]} class="atelier__crown" />
+        <p class="eyebrow">{h.ourStory}</p>
+        <h2 id="atelier-title" class="h-section">{h.atelierTitle}</h2>
+        <p class="lead">{h.atelierText(site.founded, site.founder)}</p>
+        <dl class="stats">
+          {site.stats.map((s) => (
+            <div>
+              <dt>{t.stats[s.label] ?? s.label}</dt>
+              <dd>{s.value}</dd>
+            </div>
+          ))}
+        </dl>
+        <a class="btn btn--primary" href={l('/our-story/')}>{h.readStory}</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Fashion show -->
+  <section class="section runway on-dark" aria-labelledby="runway-title">
+    <div class="container runway__grid">
+      <div class="runway__text">
+        <p class="eyebrow">{h.runwayEyebrow}</p>
+        <h2 id="runway-title" class="h-section">{h.runwayTitle}</h2>
+        <p class="runway__lead">{h.runwayText}</p>
+        <a class="btn btn--light" href={l('/fashion-show/')}>{h.runwayLink}</a>
+      </div>
+      <div class="runway__media">
+        <Photo src={runwayStill} alt={t.show.stillAlt[3]} ratio="9/16" sizes="(min-width: 900px) 30vw, 50vw" />
+        <VideoCard src="/media/show/backstage.mp4" poster={runwayPoster} title={t.show.backstage} hideCaption />
+      </div>
+    </div>
+  </section>
+
+  <!-- Celebrities -->
+  <CelebritiesStrip stone />
+
+  <!-- Collections -->
+  <section id="collections" class="section collections" aria-labelledby="collections-title">
+    <div class="container collections__inner">
+      <p class="eyebrow">{h.collectionsEyebrow}</p>
+      <h2 id="collections-title" class="h-section collections__title">{h.collectionsTitle}</h2>
+      <ul role="list" class="collections__list">
+        {collections.map((c) => <li><a href={l(`/collections/${c.id}/`)}>{c.data.name}</a></li>)}
+      </ul>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  /* ---------- Hero ---------- */
+  .hero {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: 880px;
+    overflow: hidden;
+    background: var(--black);
+    color: var(--ivory);
+  }
+  .hero__media {
+    position: absolute;
+    inset: 0;
+  }
+  .hero__img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: right center;
+  }
+  .hero__content {
+    position: relative;
+    margin-top: auto;
+    max-width: calc(640px + var(--gutter));
+    padding: 0 var(--gutter) 96px;
+  }
+  .hero__eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+  }
+  .hero__eyebrow span {
+    display: block;
+    width: 56px;
+    height: 1px;
+    background: var(--gold);
+  }
+  .hero h1 {
+    margin: 30px 0 28px;
+  }
+  .hero__text {
+    max-width: 470px;
+    margin-bottom: 44px;
+    font-size: 17px;
+    color: var(--on-dark);
+  }
+  .hero__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+
+  /* ---------- Press ---------- */
+  .press-section {
+    padding-block: 120px;
+  }
+
+  /* ---------- Category tiles ---------- */
+  .house {
+    padding-bottom: 120px;
+  }
+  .tiles {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 24px;
+  }
+  .tile {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .tile__row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+  }
+  .tile__name {
+    font-family: var(--font-display);
+    font-size: 28px;
+    line-height: 1.2;
+  }
+  .tile__cta {
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* ---------- The Edit ---------- */
+  .tabs {
+    display: flex;
+    gap: 22px;
+  }
+  .tabs__tab {
+    min-height: 44px;
+    padding: 0 2px;
+    border: 0;
+    border-bottom: 1px solid transparent;
+    background: transparent;
+    color: var(--muted);
+    font-weight: 400;
+    font-size: 12px;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+  }
+  .tabs__tab[aria-selected='true'] {
+    color: var(--ink);
+    border-bottom-color: var(--ink);
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 40px 24px;
+  }
+
+  /* ---------- Fashion show ---------- */
+  .runway {
+    background: var(--onyx);
+    color: var(--ivory);
+  }
+  .runway__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+    align-items: center;
+    gap: clamp(40px, 6vw, 104px);
+  }
+  .runway__text {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 22px;
+  }
+  .runway__text .h-section {
+    margin-top: -4px;
+  }
+  .runway__lead {
+    max-width: 440px;
+    margin-bottom: 14px;
+    font-size: 17px;
+    color: var(--on-dark);
+  }
+  .runway__media {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    align-items: end;
+  }
+
+  /* ---------- Collections ---------- */
+  .collections__inner {
+    max-width: calc(1120px + 2 * var(--gutter));
+    text-align: center;
+  }
+  .collections__title {
+    margin: 18px 0 48px;
+  }
+  .collections__list {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px 40px;
+    font-family: var(--font-display);
+    font-style: italic;
+    font-weight: 300;
+    font-size: clamp(28px, 3vw, 40px);
+    line-height: 1.3;
+  }
+
+  /* ---------- Our story ---------- */
+  .atelier__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+    align-items: center;
+    gap: clamp(40px, 6vw, 104px);
+  }
+  .atelier__text {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 22px;
+  }
+  .atelier :global(.atelier__crown) {
+    width: 64px;
+    height: auto;
+  }
+  .atelier__text .h-section {
+    margin-top: -4px;
+  }
+  .atelier .lead {
+    max-width: 520px;
+    line-height: 1.75;
+  }
+  .stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px 64px;
+    margin: 18px 0 14px;
+  }
+  .stats div {
+    display: flex;
+    flex-direction: column-reverse;
+  }
+  .stats dd {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 46px;
+    line-height: 1;
+  }
+  .stats dt {
+    margin-top: 10px;
+    font-size: 11px;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 1023px) {
+    .tiles {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 40px 16px;
+    }
+  }
+  @media (max-width: 767px) {
+    /* Phones: portrait photo on top, text below on black, so the face stays visible
+       and the white text never sits on skin. */
+    /* The whole hero (photo + text + buttons) fits one screen below the announcement bar:
+       the text keeps its natural height and the photo takes the rest. */
+    .hero {
+      height: calc(100svh - 56px);
+      min-height: 560px;
+    }
+    .hero__media {
+      position: relative;
+      flex: 1 1 auto;
+      min-height: 220px;
+      width: 100%;
+    }
+    .hero__img {
+      /* Keeps eyes and lips in frame whatever height the photo gets. */
+      object-position: center 42%;
+    }
+    /* Top fade keeps the ivory logo readable over the hair; bottom fade blends into the text block. */
+    .hero__media::before,
+    .hero__media::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      z-index: 1;
+      pointer-events: none;
+    }
+    .hero__media::before {
+      top: 0;
+      height: 34%;
+      background: linear-gradient(to bottom, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0));
+    }
+    .hero__media::after {
+      bottom: 0;
+      height: 40%;
+      background: linear-gradient(to bottom, rgba(0, 0, 0, 0), var(--black));
+    }
+    .hero__content {
+      flex: none;
+      z-index: 2;
+      margin-top: -40px;
+      padding-bottom: 28px;
+    }
+    .hero h1 {
+      margin: 16px 0 14px;
+    }
+    .hero__text {
+      margin-bottom: 22px;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+    .hero__actions {
+      flex-wrap: nowrap;
+      gap: 10px;
+    }
+    .hero__actions .btn {
+      flex: 1 1 0;
+      min-height: 52px;
+      padding-inline: 10px;
+      letter-spacing: 0.18em;
+    }
+    .press-section {
+      padding-block: 80px;
+    }
+    .house {
+      padding-bottom: 80px;
+    }
+    .tile__name {
+      font-size: 24px;
+    }
+    .tile__cta {
+      display: none;
+    }
+    .runway__grid,
+    .atelier__grid {
+      grid-template-columns: 1fr;
+    }
+    .stats {
+      gap: 20px 40px;
+    }
+    .stats dd {
+      font-size: 38px;
+    }
+    .runway__media {
+      gap: 10px;
+    }
+  }
+</style>
+
+<script>
+  // The Edit: Clothing / Jewelry tabs (arrow keys move between tabs).
+  const tabs = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-edit-tab]'));
+  const viewAll = document.querySelector<HTMLAnchorElement>('[data-edit-link]');
+
+  const select = (tab: HTMLButtonElement) => {
+    tabs.forEach((t) => {
+      const on = t === tab;
+      t.setAttribute('aria-selected', String(on));
+      t.tabIndex = on ? 0 : -1;
+      const panel = document.getElementById(t.getAttribute('aria-controls') ?? '');
+      if (panel) {
+        panel.hidden = !on;
+        if (on && viewAll && panel.dataset.href) viewAll.href = panel.dataset.href;
+      }
+    });
+  };
+
+  tabs.forEach((tab, i) => {
+    tab.addEventListener('click', () => select(tab));
+    tab.addEventListener('keydown', (e) => {
+      if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+      const next = tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length];
+      select(next);
+      next.focus();
+    });
+  });
+</script>

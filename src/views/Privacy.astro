@@ -1,0 +1,10 @@
+---
+import InfoLayout from '../layouts/InfoLayout.astro';
+import { useI18n } from '../i18n';
+
+const { t } = useI18n(Astro);
+---
+
+<InfoLayout title={t.privacy.title} description={t.privacy.description}>
+  <p>{t.privacy.placeholder}</p>
+</InfoLayout>

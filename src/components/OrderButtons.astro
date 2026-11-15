@@ -1,0 +1,63 @@
+---
+/**
+ * The two ways to order: Instagram DM and phone call.
+ * Used in the footer ("Order your piece"), the mobile menu, contact and product pages.
+ */
+import Icon from './Icon.astro';
+import { site, telHref } from '../../config/site';
+import { useI18n } from '../i18n';
+
+interface Props {
+  /** 'light' = on ivory/stone backgrounds, 'dark' = on onyx/black. */
+  tone?: 'light' | 'dark';
+  /** Which button gets the filled style. */
+  primary?: 'phone' | 'instagram';
+  phoneLabel?: string;
+  instagramLabel?: string;
+  class?: string;
+}
+
+const { t } = useI18n(Astro);
+const {
+  tone = 'light',
+  primary = 'phone',
+  phoneLabel = t.order.callToOrder,
+  instagramLabel = t.order.orderOnInstagram,
+  class: className,
+} = Astro.props;
+
+const filled = tone === 'dark' ? 'btn--light' : 'btn--primary';
+const outline = tone === 'dark' ? 'btn--outline-light' : 'btn--outline';
+
+const buttons = [
+  { key: 'instagram', href: site.instagram.dm, label: instagramLabel, icon: 'instagram' as const },
+  { key: 'phone', href: telHref, label: phoneLabel, icon: 'phone' as const },
+];
+if (primary === 'phone') buttons.reverse();
+---
+
+<div class:list={['order-buttons', className]}>
+  {buttons.map((b) => (
+    <a
+      class:list={['btn', b.key === primary ? filled : outline]}
+      href={b.href}
+      {...(b.key === 'instagram' ? { rel: 'noopener', target: '_blank' } : {})}
+    >
+      <Icon name={b.icon} size={18} />
+      {b.label}
+    </a>
+  ))}
+</div>
+
+<style>
+  .order-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  @media (max-width: 479px) {
+    .order-buttons .btn {
+      flex: 1 1 100%;
+    }
+  }
+</style>

@@ -1,0 +1,21 @@
+---
+import { site } from '../../config/site';
+import { useI18n } from '../i18n';
+
+const { t } = useI18n(Astro);
+---
+
+<div class="announcement">{t.common.announcement(site.freeShippingOver)}</div>
+
+<style>
+  .announcement {
+    background: var(--onyx);
+    color: var(--on-dark);
+    text-align: center;
+    padding: 11px 20px;
+    font-size: 11px;
+    line-height: 1.5;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+  }
+</style>

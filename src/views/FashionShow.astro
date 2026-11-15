@@ -1,0 +1,168 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHeader from '../components/PageHeader.astro';
+import SectionHeading from '../components/SectionHeading.astro';
+import Photo from '../components/Photo.astro';
+import VideoCard from '../components/VideoCard.astro';
+import { useI18n } from '../i18n';
+import posterRunway from '../assets/media/posters/runway.jpg';
+import posterProgram from '../assets/media/posters/program.jpg';
+import posterBackstage from '../assets/media/posters/backstage.jpg';
+import posterCh1 from '../assets/media/posters/chapter-1.jpg';
+import posterCh2 from '../assets/media/posters/chapter-2.jpg';
+import posterCh3 from '../assets/media/posters/chapter-3.jpg';
+import posterCh4 from '../assets/media/posters/chapter-4.jpg';
+
+const { t, l } = useI18n(Astro);
+const s = t.show;
+
+const stills = Object.values(
+  import.meta.glob<{ default: ImageMetadata }>('../assets/media/show/*.jpg', { eager: true }),
+).map((m) => m.default);
+
+const showFilms = [
+  { src: '/media/show/runway.mp4', poster: posterRunway, title: s.runway, caption: s.runwayText },
+  { src: '/media/show/program.mp4', poster: posterProgram, title: s.program, caption: s.programText },
+  { src: '/media/show/backstage.mp4', poster: posterBackstage, title: s.backstage, caption: s.backstageText },
+];
+const chapters = [
+  { n: 'I', src: '/media/story/chapter-1.mp4', poster: posterCh1 },
+  { n: 'II', src: '/media/story/chapter-2.mp4', poster: posterCh2 },
+  { n: 'III', src: '/media/story/chapter-3.mp4', poster: posterCh3 },
+  { n: 'IV', src: '/media/story/chapter-4.mp4', poster: posterCh4 },
+];
+---
+
+<BaseLayout title={s.title} description={s.description} ogImage={stills[3]}>
+  <div class="container">
+    <PageHeader title={s.title} intro={s.intro} breadcrumb={[{ label: t.common.home, href: l('/') }, { label: s.title }]} />
+    <p class="show__details">{s.details}</p>
+  </div>
+
+  <!-- The show: runway, program, backstage -->
+  <section class="section show-films" aria-labelledby="show-films-title">
+    <div class="container">
+      <SectionHeading eyebrow={s.filmsEyebrow} title={s.filmsTitle} id="show-films-title" />
+      <div class="show-films__grid">
+        {showFilms.map((f) => <VideoCard src={f.src} poster={f.poster} title={f.title} caption={f.caption} />)}
+      </div>
+    </div>
+  </section>
+
+  <!-- Gallery -->
+  <section class="section section--stone" aria-labelledby="gallery-title">
+    <div class="container">
+      <SectionHeading eyebrow={s.galleryEyebrow} title={s.galleryTitle} id="gallery-title" />
+      <ul role="list" class="gallery">
+        {stills.map((img, i) => (
+          <li>
+            <Photo src={img} alt={s.stillAlt[i] ?? s.galleryTitle} ratio="9/16" tone="sand-2" sizes="(min-width: 1024px) 25vw, 50vw" widths={[360, 540, 720, 900]} />
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <!-- Her story -->
+  <section id="her-story" class="section story on-dark" aria-labelledby="story-title">
+    <div class="container">
+      <SectionHeading eyebrow={s.storyEyebrow} title={s.storyTitle} id="story-title" />
+      <p class="story__lead">{s.storyText}</p>
+      <div class="story__grid">
+        {chapters.map((c) => (
+          <VideoCard src={c.src} poster={c.poster} title={s.chapter(c.n)} orientation="landscape" />
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container show__cta">
+      <a class="btn btn--primary" href={l('/shop/clothing/')}>{s.shopLooks}</a>
+      <a class="btn btn--outline" href={l('/our-story/')}>{s.ourStory}</a>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .show__details {
+    margin-top: -20px;
+    padding-bottom: 8px;
+    font-size: 12px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .show-films {
+    border-top: 1px solid var(--sand-2);
+  }
+  .show-films__grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 24px;
+  }
+
+  .gallery {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  .story {
+    background: var(--onyx);
+    color: var(--ivory);
+  }
+  .story :global(.sh) {
+    margin-bottom: 18px;
+  }
+  .story__lead {
+    max-width: 560px;
+    margin-bottom: 44px;
+    font-size: 17px;
+    color: var(--on-dark);
+  }
+  .story__grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 40px 24px;
+  }
+
+  .show__cta {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 14px;
+  }
+
+  @media (max-width: 1023px) {
+    .gallery {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (max-width: 767px) {
+    /* Swipeable row of the three vertical films */
+    .show-films__grid {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      margin-inline: calc(-1 * var(--gutter));
+      padding-inline: var(--gutter);
+      scroll-padding-inline: var(--gutter);
+      scrollbar-width: none;
+    }
+    .show-films__grid :global(.vcard) {
+      flex: 0 0 72%;
+      scroll-snap-align: start;
+    }
+    .show-films__grid :global(.vcard__title) {
+      font-size: 20px;
+    }
+    .gallery {
+      gap: 10px;
+    }
+    .story__grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

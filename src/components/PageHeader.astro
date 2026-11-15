@@ -1,0 +1,42 @@
+---
+/** Breadcrumb + H1 + one-line intro, as on the shop page. */
+import Breadcrumb from './Breadcrumb.astro';
+
+interface Props {
+  title: string;
+  intro?: string;
+  breadcrumb: { label: string; href?: string }[];
+}
+const { title, intro, breadcrumb } = Astro.props;
+---
+
+<div class="ph">
+  <Breadcrumb items={breadcrumb} />
+  <div class="ph__row">
+    <h1 class="h-page">{title}</h1>
+    {intro && <p class="ph__intro">{intro}</p>}
+  </div>
+</div>
+
+<style>
+  .ph {
+    padding-top: 28px;
+  }
+  .ph__row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 48px 0 44px;
+  }
+  .ph__intro {
+    flex: 0 1 440px;
+    color: var(--text-2);
+  }
+  @media (max-width: 767px) {
+    .ph__row {
+      padding: 32px 0 32px;
+    }
+  }
+</style>

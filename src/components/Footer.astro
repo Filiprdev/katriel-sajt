@@ -1,0 +1,257 @@
+---
+import { Image } from 'astro:assets';
+import OrderButtons from './OrderButtons.astro';
+import logoIvory from '../assets/brand/logo-ivory.png';
+import { site } from '../../config/site';
+import { useI18n } from '../i18n';
+
+interface Props {
+  /** Single-row footer used on shop and product pages. */
+  compact?: boolean;
+}
+const { compact = false } = Astro.props;
+const { t, l } = useI18n(Astro);
+const f = t.footer;
+const year = new Date().getFullYear();
+
+const columns = [
+  {
+    title: f.shop,
+    links: [
+      { label: t.home.tiles.jewelry, href: l('/shop/jewelry/') },
+      { label: f.accessories, href: l('/shop/accessories/') },
+      { label: t.home.tiles.clothing, href: l('/shop/clothing/') },
+      { label: t.home.tiles.bridal, href: l('/shop/bridal/') },
+      { label: f.stageJewelry, href: l('/shop/stage/') },
+      { label: f.kids, href: l('/shop/kids/') },
+    ],
+  },
+  {
+    title: f.discover,
+    links: [
+      { label: f.ourStory, href: l('/our-story/') },
+      { label: t.nav.fashionShow, href: l('/fashion-show/') },
+      { label: t.nav.celebrities, href: l('/celebrities/') },
+      { label: t.nav.collections, href: l('/collections/') },
+      { label: f.mediaNews, href: l('/press/') },
+      { label: f.collabs, href: '#' }, // [PLACEHOLDER] page or URL
+    ],
+  },
+  {
+    title: f.clientCare,
+    links: [
+      { label: f.howToOrder, href: l('/how-to-order/') },
+      { label: f.contact, href: l('/contact/') },
+      { label: f.shippingReturns, href: l('/shipping-returns/') },
+      { label: f.privacy, href: l('/privacy/') },
+      { label: f.terms, href: '#' }, // [PLACEHOLDER] page
+    ],
+  },
+  { title: f.follow, links: site.social.map((s) => ({ label: s.label, href: s.href })) },
+];
+
+const compactLinks = [
+  { label: f.ourStory, href: l('/our-story/') },
+  { label: f.contact, href: l('/contact/') },
+  { label: f.shippingReturns, href: l('/shipping-returns/') },
+  { label: f.privacy, href: l('/privacy/') },
+  { label: f.termsShort, href: '#' }, // [PLACEHOLDER] page
+];
+---
+
+{compact ? (
+<footer class="site-footer site-footer--compact on-dark">
+  <div class="container site-footer__compact">
+    <a href={l('/')} aria-label={t.common.homeAria}>
+      <Image src={logoIvory} alt="" height={40} densities={[1, 2]} />
+    </a>
+    <nav aria-label="Footer">
+      <ul role="list">
+        {compactLinks.map((link) => <li><a href={link.href}>{link.label}</a></li>)}
+      </ul>
+    </nav>
+    <span class="site-footer__copy">© {site.founded}–{year} {site.legalName}</span>
+  </div>
+</footer>
+) : (
+<footer class="site-footer on-dark">
+  <div class="container">
+    <div class="site-footer__order">
+      <div class="site-footer__order-text">
+        <h2 class="site-footer__order-title">{t.order.orderYourPiece}</h2>
+        <p>{t.order.footerText}</p>
+      </div>
+      <OrderButtons
+        tone="dark"
+        primary="instagram"
+        instagramLabel={t.order.messageOnInstagram}
+        phoneLabel={t.order.call(site.phone)}
+      />
+    </div>
+
+    <div class="site-footer__main">
+      <div class="site-footer__brand">
+        <a href={l('/')} aria-label={t.common.homeAria}>
+          <Image src={logoIvory} alt="" width={168} densities={[1, 2]} />
+        </a>
+        <p>{f.tagline}</p>
+      </div>
+
+      {columns.map((group) => (
+        <nav class="site-footer__col" aria-label={group.title}>
+          <h3 class="site-footer__col-title">{group.title}</h3>
+          <ul role="list">
+            {group.links.map((link) => {
+              const external = link.href.startsWith('http');
+              return (
+                <li>
+                  <a href={link.href} {...(external ? { rel: 'noopener', target: '_blank' } : {})}>{link.label}</a>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+      ))}
+    </div>
+
+    <div class="site-footer__bottom">
+      <span>© {site.founded}–{year} {site.legalName}. {f.rights}</span>
+      <span>{f.press}: <a href={`mailto:${site.pressEmail}`}>{site.pressEmail}</a></span>
+    </div>
+  </div>
+</footer>
+)}
+
+<style>
+  .site-footer--compact {
+    padding: 44px 0;
+  }
+  .site-footer__compact {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+  }
+  .site-footer__compact img {
+    height: 40px;
+    width: auto;
+  }
+  .site-footer__compact ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 28px;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+  .site-footer__compact li a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+  .site-footer__copy {
+    font-size: 12px;
+    color: var(--muted-dark);
+  }
+
+  .site-footer {
+    background: var(--onyx);
+    color: var(--on-dark);
+    padding: 96px 0 40px;
+  }
+
+  .site-footer__order {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 32px;
+    padding-bottom: 64px;
+    border-bottom: 1px solid var(--line-dark);
+  }
+  .site-footer__order-text {
+    flex: 1 1 360px;
+    min-width: 0;
+  }
+  .site-footer__order-title {
+    font-family: var(--font-display);
+    font-weight: 300;
+    font-size: 40px;
+    line-height: 1.1;
+    color: var(--ivory);
+    margin-bottom: 12px;
+  }
+  .site-footer__order-text p {
+    font-size: 15px;
+    color: var(--muted-dark);
+  }
+  .site-footer__order :global(.btn) {
+    min-height: 52px;
+    padding-inline: 30px;
+  }
+
+  .site-footer__main {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 48px;
+    padding: 64px 0;
+  }
+  .site-footer__brand {
+    flex: 2 1 280px;
+    min-width: 0;
+  }
+  .site-footer__brand img {
+    width: 168px;
+    height: auto;
+  }
+  .site-footer__brand p {
+    margin-top: 28px;
+    max-width: 300px;
+    font-size: 14px;
+    color: var(--muted-dark);
+  }
+
+  .site-footer__col {
+    flex: 1 1 150px;
+  }
+  .site-footer__col-title {
+    margin-bottom: 18px;
+    font-family: var(--font-body);
+    font-weight: 400;
+    font-size: 11px;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+  .site-footer__col ul {
+    display: flex;
+    flex-direction: column;
+  }
+  .site-footer__col a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 36px;
+    font-size: 14px;
+  }
+
+  .site-footer__bottom {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 16px;
+    padding-top: 28px;
+    border-top: 1px solid var(--line-dark);
+    font-size: 12px;
+    color: var(--muted-dark);
+  }
+
+  @media (max-width: 767px) {
+    .site-footer {
+      padding-top: 72px;
+    }
+    .site-footer__col a {
+      min-height: 44px;
+    }
+  }
+</style>

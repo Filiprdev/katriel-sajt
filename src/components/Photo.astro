@@ -1,0 +1,78 @@
+---
+/**
+ * Photo in a fixed-ratio frame. With no image it renders the sand placeholder from the design
+ * with a small label, so missing photos are obvious.
+ */
+import { Picture } from 'astro:assets';
+
+interface Props {
+  src?: ImageMetadata;
+  alt?: string;
+  /** Placeholder label when there is no image. */
+  label?: string;
+  ratio?: '3/4' | '1/1' | '4/5' | '9/16' | '16/9';
+  /** 'sand' on ivory backgrounds, 'sand-2' on stone. */
+  tone?: 'sand' | 'sand-2';
+  sizes?: string;
+  widths?: number[];
+  loading?: 'lazy' | 'eager';
+  class?: string;
+}
+
+const {
+  src,
+  alt = '',
+  label,
+  ratio = '3/4',
+  tone = 'sand',
+  sizes = '(min-width: 1024px) 25vw, (min-width: 600px) 50vw, 100vw',
+  widths = [360, 540, 720, 1080],
+  loading = 'lazy',
+  class: className,
+} = Astro.props;
+---
+
+<div class:list={['photo', `photo--${tone}`, className]} style={`aspect-ratio: ${ratio.replace('/', ' / ')}`}>
+  {src ? (
+    <Picture
+      src={src}
+      alt={alt}
+      formats={['avif', 'webp']}
+      fallbackFormat="webp"
+      widths={widths.filter((w) => w <= src.width)}
+      sizes={sizes}
+      loading={loading}
+      class="photo__img"
+    />
+  ) : (
+    label && <span class="photo__label">{label}</span>
+  )}
+</div>
+
+<style>
+  .photo {
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    padding: 18px;
+    overflow: hidden;
+    background: var(--sand);
+  }
+  .photo--sand-2 {
+    background: var(--sand-2);
+  }
+  .photo :global(.photo__img) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .photo__label {
+    font-size: 11px;
+    line-height: 1.5;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #5e5852;
+  }
+</style>

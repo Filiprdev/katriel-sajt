@@ -1,0 +1,102 @@
+---
+/**
+ * Two-column gallery on desktop (main photo first), swipeable row on mobile.
+ * Shows only real photos; a single placeholder frame when a product has none.
+ */
+import { Picture } from 'astro:assets';
+import type { Product } from '../lib/catalog';
+import { useI18n } from '../i18n';
+
+interface Props {
+  images: Product['data']['images'];
+  name: string;
+}
+const { images, name } = Astro.props;
+const { t } = useI18n(Astro);
+
+const roleOrder = ['on-model', 'packshot', 'detail', 'back'] as const;
+// Stable sort: keeps the old site's photo order within the same role.
+const sorted = [...images].sort((a, b) => roleOrder.indexOf(a.role) - roleOrder.indexOf(b.role));
+const single = sorted.length <= 1;
+---
+
+<div class:list={['gallery', { 'gallery--single': single }]}>
+  <ul role="list" class="gallery__list" aria-label={t.product.photos}>
+    {sorted.length ? (
+      sorted.map((img, i) => (
+        <li class="gallery__frame">
+          <Picture
+            src={img.src}
+            alt={img.alt}
+            formats={['avif', 'webp']}
+            fallbackFormat="webp"
+            widths={[400, 600, 800, 1200].filter((w) => w <= img.src.width)}
+            sizes={single ? '(min-width: 1024px) 40vw, 88vw' : '(min-width: 1024px) 30vw, 88vw'}
+            loading={i === 0 ? 'eager' : 'lazy'}
+            fetchpriority={i === 0 ? 'high' : undefined}
+          />
+        </li>
+      ))
+    ) : (
+      <li class="gallery__frame">
+        <span class="gallery__label">{t.common.photo} · {name}</span>
+      </li>
+    )}
+  </ul>
+</div>
+
+<style>
+  .gallery__list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+  .gallery--single .gallery__list {
+    grid-template-columns: minmax(0, 1fr);
+    max-width: 640px;
+  }
+  .gallery__frame {
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    aspect-ratio: 3 / 4;
+    padding: 18px;
+    overflow: hidden;
+    background: var(--sand);
+  }
+  .gallery__frame :global(img) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .gallery__label {
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #5e5852;
+  }
+
+  @media (max-width: 767px) {
+    .gallery {
+      margin-inline: calc(-1 * var(--gutter));
+    }
+    .gallery__list {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      padding-inline: var(--gutter);
+      scroll-padding-inline: var(--gutter);
+      scrollbar-width: none;
+    }
+    .gallery__frame {
+      flex: 0 0 86%;
+      scroll-snap-align: start;
+    }
+    .gallery--single .gallery__frame {
+      flex-basis: 100%;
+    }
+  }
+</style>

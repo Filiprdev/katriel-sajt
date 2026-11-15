@@ -1,0 +1,62 @@
+---
+/**
+ * "Celebrities in Katriel": the 4 home picks (home: 1–4 in data/celebrities.ts) + a link to /celebrities/.
+ * Used on the home page and on /press/. On phones the heading link becomes a full-width button under the photos.
+ */
+import SectionHeading from './SectionHeading.astro';
+import CelebCard from './CelebCard.astro';
+import Icon from './Icon.astro';
+import { homeCelebrities } from '../data/celebrities';
+import { useI18n } from '../i18n';
+
+interface Props {
+  /** Light gray background (home). */
+  stone?: boolean;
+  id?: string;
+}
+const { stone = false, id = 'stars-title' } = Astro.props;
+const { t, l } = useI18n(Astro);
+const stars = homeCelebrities();
+---
+
+<section class:list={['section', 'stars', { 'section--stone': stone }]} aria-labelledby={id}>
+  <div class="container">
+    <SectionHeading eyebrow={t.press.wornByEyebrow} title={t.celebs.homeTitle} id={id}>
+      <a class="view-all" href={l('/celebrities/')}>{t.celebs.all}<Icon name="arrow" size={18} /></a>
+    </SectionHeading>
+    <ul role="list" class="stars__grid">
+      {stars.map((person) => <li><CelebCard person={person} sizes="(min-width: 768px) 25vw, 50vw" /></li>)}
+    </ul>
+    <div class="stars__cta">
+      <a class="btn btn--primary" href={l('/celebrities/')}>{t.celebs.all}</a>
+    </div>
+  </div>
+</section>
+
+<style>
+  .stars__grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 40px 24px;
+  }
+  .stars__cta {
+    display: none;
+    margin-top: 40px;
+  }
+  @media (max-width: 767px) {
+    .stars__grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 32px 12px;
+    }
+    /* The heading's "view all" link moves under the photos as a full button on phones. */
+    .stars :global(.sh__actions) {
+      display: none;
+    }
+    .stars__cta {
+      display: flex;
+    }
+    .stars__cta .btn {
+      flex: 1;
+    }
+  }
+</style>

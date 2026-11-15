@@ -1,0 +1,320 @@
+---
+/**
+ * Product grid with type filter chips, sort and "Show more".
+ * Progressive enhancement: without JS every product is visible in "Featured" order
+ * and the filter/sort controls stay hidden.
+ */
+import ProductCard from './ProductCard.astro';
+import Icon from './Icon.astro';
+import { typeLabels, typesIn, type Product } from '../lib/catalog';
+import { useI18n, plural } from '../i18n';
+
+interface Props {
+  products: Product[];
+  /** Products shown before "Show more" (JS only). */
+  pageSize?: number;
+}
+
+const { products, pageSize = 12 } = Astro.props;
+const { t, l, lang } = useI18n(Astro);
+const types = typesIn(products);
+const total = products.length;
+const forms = t.shop.pieces;
+const pieces = (n: number) => `${n} ${plural(lang, n, forms)}`;
+---
+
+{total === 0 ? (
+  <div class="empty">
+    <p class="empty__title">{t.shop.emptyTitle}</p>
+    <p>{t.shop.emptyText}</p>
+    <a class="link-more" href={l('/how-to-order/')}>{t.footer.howToOrder}<Icon name="arrow" size={18} /></a>
+  </div>
+) : (
+  <div
+    class="listing"
+    data-listing
+    data-page-size={pageSize}
+    data-lang={lang}
+    data-one={forms.one}
+    data-few={forms.few}
+    data-many={forms.many}
+    data-showing={t.shop.showing}
+  >
+    <div class="listing__bar" data-js-only hidden>
+      {types.length > 1 ? (
+        <div class="chips" role="group" aria-label={t.shop.filterByType}>
+          <button type="button" class="chip" aria-pressed="true" data-type="">{t.shop.all}</button>
+          {types.map((type) => (
+            <button type="button" class="chip" aria-pressed="false" data-type={type}>{typeLabels[lang][type].many}</button>
+          ))}
+        </div>
+      ) : <span />}
+      <div class="listing__tools">
+        <span class="listing__count" aria-live="polite" data-count>{pieces(total)}</span>
+        <div class="sort">
+          <label for="sort">{t.shop.sortBy}</label>
+          <select id="sort" data-sort>
+            <option value="featured">{t.shop.sort.featured}</option>
+            <option value="newest">{t.shop.sort.newest}</option>
+            <option value="price-asc">{t.shop.sort.priceAsc}</option>
+            <option value="price-desc">{t.shop.sort.priceDesc}</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <ul role="list" class="grid" data-grid>
+      {products.map((p, i) => (
+        <li
+          data-item
+          data-type={p.data.type ?? ''}
+          data-price={p.data.priceOnRequest ? '' : (p.data.price ?? '')}
+          data-order={i}
+          data-added={p.data.addedAt?.getTime() ?? 0}
+        >
+          <ProductCard product={p} loading={i < 4 ? 'eager' : 'lazy'} />
+        </li>
+      ))}
+    </ul>
+
+    <div class="more" data-more hidden>
+      <div class="more__track" aria-hidden="true"><div class="more__bar" data-progress></div></div>
+      <span class="listing__count" data-more-count></span>
+      <button type="button" class="btn btn--outline more__btn" data-more-btn>{t.shop.showMore}</button>
+    </div>
+  </div>
+)}
+
+<style>
+  .listing__bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 22px 0 40px;
+  }
+  .listing__bar[hidden] {
+    display: none;
+  }
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .chip {
+    min-height: 44px;
+    padding: 0 18px;
+    border: 1px solid var(--line-input);
+    background: transparent;
+    color: var(--ink);
+    font-weight: 400;
+    font-size: 12px;
+    letter-spacing: 0.12em;
+  }
+  .chip[aria-pressed='true'] {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: var(--ivory);
+  }
+  .listing__tools {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 22px;
+  }
+  .listing__count {
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .sort {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .sort label {
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .sort select {
+    min-height: 44px;
+    padding: 0 12px;
+    border: 1px solid var(--line-input);
+    border-radius: 0;
+    background: transparent;
+    font-size: 13px;
+    font-weight: 300;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 48px 24px;
+  }
+  .grid [hidden] {
+    display: none;
+  }
+
+  .more {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+    padding-top: 72px;
+  }
+  .more[hidden] {
+    display: none;
+  }
+  .more__track {
+    position: relative;
+    width: 220px;
+    height: 1px;
+    background: var(--sand-2);
+  }
+  .more__bar {
+    position: absolute;
+    left: 0;
+    top: -0.5px;
+    height: 2px;
+    width: 0;
+    background: var(--ink);
+  }
+  .more__btn {
+    min-height: 52px;
+    padding-inline: 40px;
+  }
+
+  .empty {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 56px 0 24px;
+    color: var(--text-2);
+  }
+  .empty__title {
+    font-family: var(--font-display);
+    font-size: 32px;
+    line-height: 1.2;
+    color: var(--ink);
+  }
+
+  @media (max-width: 599px) {
+    .grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 36px 14px;
+    }
+    .grid :global(.card__name) {
+      font-size: 19px;
+    }
+    .grid :global(.card__price) {
+      font-size: 13px;
+    }
+    .grid :global(.photo__label) {
+      font-size: 10px;
+      letter-spacing: 0.14em;
+    }
+    .chips {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      margin-inline: calc(-1 * var(--gutter));
+      padding-inline: var(--gutter);
+      scrollbar-width: none;
+    }
+    .chip {
+      flex: none;
+    }
+    .listing__tools {
+      width: 100%;
+      justify-content: space-between;
+    }
+  }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-listing]').forEach((root) => {
+    const ds = root.dataset;
+    const pageSize = Number(ds.pageSize) || 12;
+    const grid = root.querySelector<HTMLElement>('[data-grid]')!;
+    const items = Array.from(grid.querySelectorAll<HTMLElement>('[data-item]'));
+    const chips = Array.from(root.querySelectorAll<HTMLButtonElement>('.chip'));
+    const sort = root.querySelector<HTMLSelectElement>('[data-sort]')!;
+    const count = root.querySelector<HTMLElement>('[data-count]')!;
+    const more = root.querySelector<HTMLElement>('[data-more]')!;
+    const moreCount = root.querySelector<HTMLElement>('[data-more-count]')!;
+    const progress = root.querySelector<HTMLElement>('[data-progress]')!;
+    const moreBtn = root.querySelector<HTMLButtonElement>('[data-more-btn]')!;
+
+    let type = '';
+    let limit = pageSize;
+
+    // Plural forms: English one/many; Serbian one/few/many.
+    const form = (n: number) => {
+      if (ds.lang !== 'sr') return n === 1 ? ds.one : ds.many;
+      const m10 = n % 10, m100 = n % 100;
+      if (m10 === 1 && m100 !== 11) return ds.one;
+      if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return ds.few;
+      return ds.many;
+    };
+    const pieces = (n: number) => `${n} ${form(n)}`;
+
+    const num = (el: HTMLElement, key: string, fallback: number) => {
+      const v = el.dataset[key];
+      return v === undefined || v === '' ? fallback : Number(v);
+    };
+    const sorters: Record<string, (a: HTMLElement, b: HTMLElement) => number> = {
+      featured: (a, b) => num(a, 'order', 0) - num(b, 'order', 0),
+      newest: (a, b) => num(b, 'added', 0) - num(a, 'added', 0) || num(a, 'order', 0) - num(b, 'order', 0),
+      // Price on request goes last in both price sorts.
+      'price-asc': (a, b) => num(a, 'price', Infinity) - num(b, 'price', Infinity),
+      'price-desc': (a, b) => num(b, 'price', -Infinity) - num(a, 'price', -Infinity),
+    };
+
+    const render = () => {
+      const sorted = [...items].sort(sorters[sort.value] ?? sorters.featured);
+      sorted.forEach((el) => grid.appendChild(el));
+
+      const matching = sorted.filter((el) => !type || el.dataset.type === type);
+      let shown = 0;
+      sorted.forEach((el) => {
+        const visible = matching.includes(el) && shown < limit;
+        if (visible) shown++;
+        el.hidden = !visible;
+      });
+
+      count.textContent = pieces(matching.length);
+      moreCount.textContent = (ds.showing ?? '')
+        .replace('{shown}', String(shown))
+        .replace('{total}', pieces(matching.length));
+      progress.style.width = `${matching.length ? Math.round((shown / matching.length) * 100) : 0}%`;
+      more.hidden = matching.length <= pageSize;
+      moreBtn.hidden = shown >= matching.length;
+    };
+
+    chips.forEach((chip) =>
+      chip.addEventListener('click', () => {
+        type = chip.dataset.type ?? '';
+        limit = pageSize;
+        chips.forEach((c) => c.setAttribute('aria-pressed', String(c === chip)));
+        render();
+      }),
+    );
+    sort.addEventListener('change', () => {
+      limit = pageSize;
+      render();
+    });
+    moreBtn.addEventListener('click', () => {
+      const firstNew = limit;
+      limit += pageSize;
+      render();
+      // Move focus to the first newly revealed product for keyboard users.
+      const visible = Array.from(grid.children).filter((el) => !(el as HTMLElement).hidden);
+      visible[firstNew]?.querySelector<HTMLAnchorElement>('a')?.focus({ preventScroll: true });
+    });
+
+    root.querySelectorAll<HTMLElement>('[data-js-only]').forEach((el) => (el.hidden = false));
+    render();
+  });
+</script>

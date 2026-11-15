@@ -1,0 +1,69 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHeader from '../components/PageHeader.astro';
+import Photo from '../components/Photo.astro';
+import { getProductCollections } from '../lib/catalog';
+import { useI18n } from '../i18n';
+
+const { t, l } = useI18n(Astro);
+
+const collections = await getProductCollections();
+---
+
+<BaseLayout title={t.collections.title} description={t.collections.description}>
+  <div class="container cols">
+    <PageHeader
+      title={t.collections.title}
+      intro={t.collections.intro}
+      breadcrumb={[{ label: t.common.home, href: l('/') }, { label: t.collections.title }]}
+    />
+    <ul role="list" class="cols__grid">
+      {collections.map((c) => (
+        <li>
+          <a class="col" href={l(`/collections/${c.id}/`)}>
+            <Photo src={c.data.cover} alt="" ratio="4/5" label={`${t.common.photo} · ${c.data.name}`} />
+            <span class="col__name">{c.data.name}</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </div>
+</BaseLayout>
+
+<style>
+  .cols {
+    padding-bottom: var(--section-y);
+  }
+  .cols__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 48px 24px;
+    padding-top: 48px;
+    border-top: 1px solid var(--sand-2);
+  }
+  .col {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .col__name {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-weight: 300;
+    font-size: 32px;
+    line-height: 1.15;
+  }
+  @media (max-width: 599px) {
+    .cols__grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 32px 14px;
+    }
+    .col__name {
+      font-size: 24px;
+    }
+    .cols__grid :global(.photo__label) {
+      font-size: 10px;
+      letter-spacing: 0.14em;
+    }
+  }
+</style>

@@ -1,0 +1,67 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHeader from '../components/PageHeader.astro';
+import ProductCard from '../components/ProductCard.astro';
+import Icon from '../components/Icon.astro';
+import { getProducts, type ProductCollection } from '../lib/catalog';
+import { useI18n } from '../i18n';
+
+interface Props {
+  collection: ProductCollection;
+}
+const { collection } = Astro.props;
+const { t, l } = useI18n(Astro);
+const products = (await getProducts()).filter((p) => p.data.collections.some((c) => c.id === collection.id));
+const { name, description } = collection.data;
+---
+
+<BaseLayout
+  title={t.collections.pageTitle(name)}
+  description={t.collections.pageDescription(name)}
+>
+  <div class="container col-page">
+    <PageHeader
+      title={name}
+      intro={description}
+      breadcrumb={[{ label: t.common.home, href: l('/') }, { label: t.collections.title, href: l('/collections/') }, { label: name }]}
+    />
+    <div class="col-page__body">
+      {products.length ? (
+        <ul role="list" class="grid">
+          {products.map((p) => <li><ProductCard product={p} /></li>)}
+        </ul>
+      ) : (
+        <div class="empty">
+          <p class="empty__title">{t.collections.empty}</p>
+          <a class="link-more" href={l('/collections/')}>{t.collections.all}<Icon name="arrow" size={18} /></a>
+        </div>
+      )}
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .col-page {
+    padding-bottom: var(--section-y);
+  }
+  .col-page__body {
+    padding-top: 48px;
+    border-top: 1px solid var(--sand-2);
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 48px 24px;
+  }
+  .empty {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 18px;
+  }
+  .empty__title {
+    font-family: var(--font-display);
+    font-size: 32px;
+    line-height: 1.2;
+  }
+</style>

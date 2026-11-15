@@ -1,0 +1,50 @@
+---
+/** Eyebrow + H2. Put actions (tabs, "View all") in the default slot; they sit on the right. */
+interface Props {
+  eyebrow: string;
+  title: string;
+  id: string;
+  align?: 'left' | 'center';
+  /** Heading level size: 'section' (60px) or 'sub' (52px, product page). */
+  size?: 'section' | 'sub';
+}
+const { eyebrow, title, id, align = 'left', size = 'section' } = Astro.props;
+const hasActions = Astro.slots.has('default');
+---
+
+<div class:list={['sh', `sh--${align}`]}>
+  <div>
+    <p class="eyebrow">{eyebrow}</p>
+    <h2 id={id} class:list={['h-section', 'sh__title', { 'sh__title--sub': size === 'sub' }]}>{title}</h2>
+  </div>
+  {hasActions && <div class="sh__actions"><slot /></div>}
+</div>
+
+<style>
+  .sh {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 44px;
+  }
+  .sh--center {
+    justify-content: center;
+    text-align: center;
+    margin-bottom: 56px;
+  }
+  .sh__title {
+    margin-top: 18px;
+  }
+  .sh__title--sub {
+    margin-top: 16px;
+    font-size: clamp(36px, 3.6vw, 52px);
+  }
+  .sh__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 28px;
+  }
+</style>

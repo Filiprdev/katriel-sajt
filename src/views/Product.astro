@@ -1,0 +1,258 @@
+---
+import { getEntry, render } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Breadcrumb from '../components/Breadcrumb.astro';
+import ProductGallery from '../components/ProductGallery.astro';
+import OrderButtons from '../components/OrderButtons.astro';
+import SectionHeading from '../components/SectionHeading.astro';
+import ProductCard from '../components/ProductCard.astro';
+import Icon from '../components/Icon.astro';
+import { getProducts, formatPrice, typeLabels, productUrl, categoryName, type Product } from '../lib/catalog';
+import { useI18n } from '../i18n';
+import { site } from '../../config/site';
+import { getImage } from 'astro:assets';
+
+interface Props {
+  product: Product;
+}
+const { product } = Astro.props;
+const { t, l, lang } = useI18n(Astro);
+const tp = t.product;
+const { name, type, images, price, priceOnRequest, description } = product.data;
+const hasBody = Boolean(product.body?.trim());
+const category = (await getEntry(product.data.category))!;
+const { Content } = await render(product);
+
+const typeLabel = type ? typeLabels[lang][type] : undefined;
+const catName = categoryName(category, lang);
+const eyebrow = [catName, typeLabel?.many].filter(Boolean).join(' · ');
+const priceLabel = formatPrice(product, lang);
+
+// Complete the look: clothing → jewelry & accessories; otherwise other pieces from the same category.
+const all = await getProducts();
+const isClothing = category.id === 'clothing';
+const pool = all.filter((p) =>
+  p.id !== product.id &&
+  (isClothing ? ['jewelry', 'accessories'].includes(p.data.category.id) : p.data.category.id === category.id),
+);
+const shareCollection = (p: Product) =>
+  p.data.collections.some((c) => product.data.collections.some((own) => own.id === c.id));
+const related = [...pool]
+  .sort((a, b) => Number(shareCollection(b)) - Number(shareCollection(a)) || Number(b.data.featured) - Number(a.data.featured))
+  .slice(0, 4);
+const relatedLink = isClothing
+  ? { label: tp.shopJewelry, href: l('/shop/jewelry/') }
+  : { label: tp.shopCategory(catName), href: l(`/shop/${category.id}/`) };
+
+// SEO
+const mainImage = images.find((i) => i.role === 'on-model') ?? images[0];
+// Imported SEO descriptions are English; Serbian pages use the generated Serbian one.
+const metaDescription =
+  (lang === 'en' ? description : undefined) ??
+  tp.metaDescription(name, priceOnRequest || price === undefined ? '' : priceLabel, catName);
+const ldImage = mainImage
+  ? new URL((await getImage({ src: mainImage.src, width: 1200, format: 'jpg' })).src, Astro.site).href
+  : undefined;
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Product',
+  name: name.replace(/[“”]/g, '"'),
+  ...(ldImage ? { image: [ldImage] } : {}),
+  category: category.data.name,
+  brand: { '@type': 'Brand', name: site.name },
+  url: new URL(productUrl(product, lang), Astro.site).href,
+  ...(!priceOnRequest && price !== undefined
+    ? {
+        offers: {
+          '@type': 'Offer',
+          price: price.toFixed(2),
+          priceCurrency: 'EUR',
+          availability: 'https://schema.org/InStock',
+          url: new URL(productUrl(product, lang), Astro.site).href,
+        },
+      }
+    : {}),
+};
+---
+
+<BaseLayout
+  title={name.replace(/[“”]/g, '')}
+  description={metaDescription}
+  ogImage={mainImage?.src}
+  ogType="product"
+  currentCategory={category.id}
+  compactFooter
+>
+  <script type="application/ld+json" slot="head" set:html={JSON.stringify(jsonLd)} />
+
+  <div class="container product">
+    <div class="product__crumbs">
+      <Breadcrumb
+        items={[
+          { label: t.common.home, href: l('/') },
+          { label: catName, href: l(`/shop/${category.id}/`) },
+          { label: typeLabel?.many ?? name },
+        ]}
+      />
+    </div>
+
+    <div class="product__main">
+      <div class="product__gallery">
+        <ProductGallery images={images} name={name} />
+      </div>
+
+      <div class="product__info">
+        <p class="eyebrow">{eyebrow}</p>
+        <h1 class="h-product product__name">{name}</h1>
+        <p class="product__price">{priceLabel}</p>
+        {/* Descriptions come from the old site in English. */}
+        {hasBody && <div class="product__desc" lang="en"><Content /></div>}
+
+        <div class="product__order">
+          <p class="product__piece">
+            <span>{tp.yourPiece}</span>
+            {name}
+          </p>
+          <OrderButtons class="product__buttons" />
+          <p class="product__note">{t.order.note}</p>
+        </div>
+
+        <p class="product__help">{tp.questions} <a href={l('/contact/')}>{tp.contactAtelier}</a></p>
+      </div>
+    </div>
+
+    {related.length > 0 && (
+      <section class="look" aria-labelledby="look-title">
+        <SectionHeading eyebrow={tp.styledWith} title={tp.completeLook} id="look-title" size="sub">
+          <a class="view-all" href={relatedLink.href}>{relatedLink.label}<Icon name="arrow" size={18} /></a>
+        </SectionHeading>
+        <ul role="list" class="look__grid">
+          {related.map((p) => <li><ProductCard product={p} ratio="1/1" size="sm" /></li>)}
+        </ul>
+      </section>
+    )}
+  </div>
+</BaseLayout>
+
+<style>
+  .product {
+    padding-bottom: var(--section-y);
+  }
+  .product__crumbs {
+    padding: 28px 0 32px;
+  }
+  .product__main {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: clamp(32px, 5vw, 80px);
+  }
+  .product__gallery {
+    flex: 999 1 560px;
+    min-width: 0;
+  }
+  .product__info {
+    flex: 1 1 360px;
+    min-width: 0;
+    max-width: 480px;
+  }
+  .product__info .eyebrow {
+    letter-spacing: 0.3em;
+  }
+  .product__name {
+    margin: 18px 0;
+  }
+  .product__price {
+    font-size: 19px;
+    font-weight: 400;
+    letter-spacing: 0.04em;
+  }
+  .product__desc {
+    margin-top: 26px;
+    color: var(--muted);
+  }
+  .product__desc :global(p + p) {
+    margin-top: 1em;
+  }
+  .product__order {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 30px;
+  }
+  .product__piece {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-bottom: 6px;
+    font-family: var(--font-display);
+    font-size: 21px;
+    line-height: 1.3;
+  }
+  .product__piece span {
+    font-family: var(--font-body);
+    font-weight: 400;
+    font-size: 11px;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .product__order :global(.product__buttons) {
+    flex-direction: column;
+  }
+  .product__order :global(.btn) {
+    min-height: 56px;
+    letter-spacing: 0.26em;
+  }
+  .product__note {
+    margin-top: 6px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--muted);
+  }
+  .product__help {
+    margin-top: 26px;
+    font-size: 14px;
+    color: var(--text-2);
+  }
+  .product__help a {
+    border-bottom: 1px solid var(--ink);
+  }
+
+  .look {
+    margin-top: 120px;
+  }
+  .look :global(.sh) {
+    margin-bottom: 40px;
+  }
+  .look__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 40px 24px;
+  }
+
+  @media (max-width: 1023px) {
+    .product__info {
+      max-width: none;
+    }
+  }
+  @media (max-width: 767px) {
+    .product__crumbs {
+      padding: 20px 0 20px;
+    }
+    .look {
+      margin-top: 80px;
+    }
+    .look__grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 32px 14px;
+    }
+    .look__grid :global(.card__name) {
+      font-size: 19px;
+    }
+    .look__grid :global(.photo__label) {
+      font-size: 10px;
+      letter-spacing: 0.14em;
+    }
+  }
+</style>

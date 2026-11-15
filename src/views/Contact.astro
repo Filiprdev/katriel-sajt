@@ -1,0 +1,106 @@
+---
+import InfoLayout from '../layouts/InfoLayout.astro';
+import OrderButtons from '../components/OrderButtons.astro';
+import { site, telHref } from '../../config/site';
+import { useI18n } from '../i18n';
+
+const { t, l } = useI18n(Astro);
+const c = t.contact;
+const rows = [
+  { label: c.phone, value: site.phone, href: telHref },
+  { label: 'Instagram', value: `@${site.instagram.handle}`, href: site.instagram.url },
+  { label: c.email, value: site.email, href: `mailto:${site.email}` },
+  { label: c.press, value: site.pressEmail, href: `mailto:${site.pressEmail}` },
+  { label: c.atelier, value: site.address },
+  { label: c.hours, value: site.hours },
+];
+---
+
+<InfoLayout title={c.title} description={c.description} intro={c.intro} width="wide">
+  <div class="contact">
+    <dl class="contact__list">
+      {rows.map((r) => (
+        <div class="contact__row">
+          <dt>{r.label}</dt>
+          <dd>
+            {r.href ? (
+              <a href={r.href} {...(r.href.startsWith('http') ? { rel: 'noopener', target: '_blank' } : {})}>{r.value}</a>
+            ) : (
+              r.value
+            )}
+          </dd>
+        </div>
+      ))}
+    </dl>
+    <aside class="contact__order" aria-labelledby="order-title">
+      <h2 id="order-title">{t.order.orderYourPiece}</h2>
+      <p>{t.order.note}</p>
+      <OrderButtons />
+      <p><a href={l('/how-to-order/')}>{t.order.howItWorks}</a></p>
+    </aside>
+  </div>
+</InfoLayout>
+
+<style>
+  .contact {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 440px);
+    gap: clamp(40px, 6vw, 104px);
+    align-items: start;
+  }
+  .contact__row {
+    display: grid;
+    grid-template-columns: 140px minmax(0, 1fr);
+    gap: 16px;
+    padding: 18px 0;
+    border-bottom: 1px solid var(--sand-2);
+  }
+  .contact__row:first-child {
+    padding-top: 0;
+  }
+  .contact__row dt {
+    padding-top: 6px;
+    font-size: 11px;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .contact__row dd {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 26px;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+  }
+  .contact__order {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    padding: 40px;
+    background: var(--stone);
+  }
+  .contact__order h2 {
+    margin: 0 !important;
+  }
+  .contact__order :global(.order-buttons) {
+    flex-direction: column;
+  }
+
+  @media (max-width: 899px) {
+    .contact {
+      grid-template-columns: 1fr;
+    }
+  }
+  @media (max-width: 599px) {
+    .contact__row {
+      grid-template-columns: 1fr;
+      gap: 4px;
+    }
+    .contact__row dd {
+      font-size: 22px;
+    }
+    .contact__order {
+      padding: 28px 20px;
+    }
+  }
+</style>

@@ -1,0 +1,30 @@
+:root {
+  --black: #000000;      /* hero background, matches the cover photo */
+  --onyx: #0E0D0C;       /* announcement bar, footer */
+  --ink: #141210;        /* text on light, primary buttons */
+  --ivory: #F6F2EC;      /* page background, text on dark */
+  --stone: #EDE7DE;      /* alternate light sections */
+  --sand: #E4DDD2;       /* image placeholders on ivory */
+  --sand-2: #DDD5C9;     /* placeholders on stone, hairlines on light */
+  --line-input: #C9C0B3; /* chip, select and size borders */
+  --text-2: #3A3632;     /* secondary body text on light */
+  --muted: #6B655E;      /* meta text on light (passes 4.5:1 on ivory and stone) */
+  --on-dark: #D9D3CA;    /* body text on dark */
+  --muted-dark: #A39E97; /* meta text on dark */
+  --line-dark: #2E2A26;  /* hairlines on dark */
+  --gold: #C2A878;       /* accent on dark backgrounds only */
+  --gold-text: #7A6340;  /* accent text (eyebrows) on light backgrounds */
+
+  --font-display: 'Cormorant Garamond', 'Times New Roman', serif;
+  --font-body: 'Jost', 'Helvetica Neue', Arial, sans-serif;
+
+  --container: 1328px;
+  --gutter: clamp(20px, 4vw, 56px);
+  --section-y: 112px;
+}
+
+@media (max-width: 767px) {
+  :root {
+    --section-y: 80px;
+  }
+}

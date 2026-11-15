@@ -1,0 +1,238 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHeader from '../components/PageHeader.astro';
+import SectionHeading from '../components/SectionHeading.astro';
+import CelebCard from '../components/CelebCard.astro';
+import VideoCard from '../components/VideoCard.astro';
+import { celebrities, celebrityGroups } from '../data/celebrities';
+import { useI18n } from '../i18n';
+
+const { t, l } = useI18n(Astro);
+const c = t.celebs;
+const groups = celebrityGroups();
+
+// Sections: a big group gets its own section; small groups (1–2 people) in a row share one section,
+// side by side, as long as they fit in the 4-column grid.
+type Group = (typeof groups)[number];
+const sections: Group[][] = [];
+for (const g of groups) {
+  const last = sections.at(-1);
+  const lastIsSmall = last && last.every((x) => x.people.length <= 2);
+  const lastCols = last ? last.reduce((n, x) => n + x.people.length, 0) : 0;
+  if (g.people.length <= 2 && g.category !== 'unknown' && lastIsSmall && last[0].category !== 'unknown' && lastCols + g.people.length <= 4) {
+    last.push(g);
+  } else {
+    sections.push([g]);
+  }
+}
+
+// Every video, then rows by shape so the frames in a row line up: 9:16, then 3:4 and square, then 16:9.
+// The first video of a person gets id "video-<id>" (the card's "Watch the video" link jumps there).
+const allVideos = celebrities.flatMap((p) =>
+  p.videos.map((v, i) => ({ person: p, video: v, anchor: i === 0 ? `video-${p.id}` : `video-${p.id}-${i + 1}` })),
+);
+const rows = [
+  { cls: 'videos__row videos__row--tall', items: allVideos.filter((x) => x.video.ratio === '9/16') },
+  { cls: 'videos__row', items: allVideos.filter((x) => x.video.ratio === '3/4' || x.video.ratio === '1/1') },
+  { cls: 'videos__row videos__row--wide', items: allVideos.filter((x) => x.video.ratio === '16/9') },
+].filter((r) => r.items.length > 0);
+const ogImage = celebrities.find((p) => p.home === 1)?.photos[0];
+---
+
+<BaseLayout title={c.title} description={c.description} ogImage={ogImage}>
+  <div class="container">
+    <PageHeader title={c.title} intro={c.intro} breadcrumb={[{ label: t.common.home, href: l('/') }, { label: c.title }]} />
+    <nav class="jump" aria-label={c.jumpTo}>
+      <ul role="list">
+        {groups.map((g) => (
+          <li><a href={`#${g.category}`}>{c.groups[g.category]} <span>{g.people.length}</span></a></li>
+        ))}
+        {allVideos.length > 0 && <li><a href="#videos">{c.videosTitle} <span>{allVideos.length}</span></a></li>}
+      </ul>
+    </nav>
+  </div>
+
+  {sections.map((list, i) => (
+    <section class:list={['section', 'group', { 'section--stone': i % 2 === 1 }]}>
+      <div class="container group__row">
+        {list.map((g) => (
+          <div id={g.category} class="group__block" style={`--cols: ${list.length > 1 ? g.people.length : 4}`} role="group" aria-labelledby={`${g.category}-title`}>
+            <h2 id={`${g.category}-title`} class="h-section group__title">
+              {c.groups[g.category]} <span class="group__count">{g.people.length}</span>
+            </h2>
+            <ul role="list" class="celeb-grid">
+              {g.people.map((person) => (
+                <li><CelebCard person={person} full /></li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </section>
+  ))}
+
+  {allVideos.length > 0 && (
+    <section id="videos" class="section videos on-dark" aria-labelledby="videos-title">
+      <div class="container">
+        <SectionHeading eyebrow={c.videosEyebrow} title={c.videosTitle} id="videos-title" />
+        {rows.map((row) => (
+          <div class={row.cls}>
+            {row.items.map(({ person: p, video: v, anchor }) => (
+              <VideoCard
+                id={anchor}
+                src={v.src}
+                poster={v.poster}
+                ratio={v.ratio}
+                orientation={v.ratio === '9/16' || v.ratio === '3/4' ? 'portrait' : 'landscape'}
+                title={p.name ?? c.unnamed}
+                caption={c.one[p.category] || undefined}
+              />
+            ))}
+          </div>
+        ))}
+      </div>
+    </section>
+  )}
+</BaseLayout>
+
+<style>
+  .jump {
+    padding-bottom: 32px;
+  }
+  .jump ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .jump a {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 44px;
+    padding: 0 18px;
+    border: 1px solid var(--sand-2);
+    font-size: 12px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+  .jump a:hover {
+    border-color: var(--ink);
+  }
+  .jump span,
+  .group__count {
+    color: var(--muted);
+  }
+  .group__block {
+    scroll-margin-top: 100px;
+  }
+  /* Small groups side by side: each takes as many of the 4 columns as it has people. */
+  .group__row {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 56px 24px;
+  }
+  .group__block {
+    grid-column: span var(--cols);
+  }
+  .group__block .celeb-grid {
+    grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+  }
+  .group:first-of-type {
+    border-top: 1px solid var(--sand-2);
+  }
+  .group__title {
+    margin-bottom: 44px;
+  }
+  .group__count {
+    font-size: 0.5em;
+    vertical-align: super;
+  }
+  .celeb-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 48px 24px;
+  }
+
+  .videos {
+    background: var(--onyx);
+    color: var(--ivory);
+    scroll-margin-top: 80px;
+  }
+  .videos :global(.vcard) {
+    scroll-margin-top: 100px;
+  }
+  .videos__row {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 40px 24px;
+    align-items: end;
+  }
+  .videos__row--tall {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 32px 16px;
+  }
+  .videos__row--wide {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .videos__row--tall :global(.vcard__title) {
+    font-size: 20px;
+  }
+  .videos__row + .videos__row {
+    margin-top: 56px;
+  }
+
+  @media (max-width: 1023px) {
+    .group__row {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .group__block {
+      grid-column: span min(var(--cols), 2);
+    }
+    .group__block[style*='--cols: 4'] {
+      grid-column: 1 / -1;
+    }
+    .group__block .celeb-grid,
+    .celeb-grid {
+      grid-template-columns: repeat(min(var(--cols), 3), minmax(0, 1fr));
+    }
+    .videos__row {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 40px 16px;
+    }
+    .videos__row--tall {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+  @media (max-width: 767px) {
+    .group__row {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 48px 12px;
+    }
+    .group__block .celeb-grid,
+    .celeb-grid {
+      grid-template-columns: repeat(min(var(--cols), 2), minmax(0, 1fr));
+      gap: 36px 12px;
+    }
+    /* Swipeable row of the tall videos */
+    .videos__row--tall {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      margin-inline: calc(-1 * var(--gutter));
+      padding-inline: var(--gutter);
+      scroll-padding-inline: var(--gutter);
+      scrollbar-width: none;
+    }
+    .videos__row--tall :global(.vcard) {
+      flex: 0 0 68%;
+      scroll-snap-align: start;
+    }
+    .videos__row:not(.videos__row--tall) {
+      grid-template-columns: 1fr;
+    }
+    .videos__row + .videos__row {
+      margin-top: 40px;
+    }
+  }
+</style>

@@ -1,0 +1,177 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHeader from '../components/PageHeader.astro';
+import PressFeature from '../components/PressFeature.astro';
+import SectionHeading from '../components/SectionHeading.astro';
+import Icon from '../components/Icon.astro';
+import CelebritiesStrip from '../components/CelebritiesStrip.astro';
+import InterviewCard from '../components/InterviewCard.astro';
+import { interviews } from '../data/interviews';
+import { site } from '../../config/site';
+import { useI18n, intlLocale } from '../i18n';
+
+const { t, l, lang } = useI18n(Astro);
+const p = t.press;
+const FIRST = 6; // interviews visible before "Show all"
+const formatDate = (iso: string) =>
+  new Intl.DateTimeFormat(intlLocale[lang], { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(iso));
+---
+
+<BaseLayout title={p.pageTitle} description={p.pageDescription}>
+  <div class="container press-page">
+    <PageHeader title={p.pageTitle} intro={p.pageIntro} breadcrumb={[{ label: t.common.home, href: l('/') }, { label: p.pageTitle }]} />
+
+    <div class="press-page__feature">
+      <PressFeature />
+    </div>
+
+    <section class="press-page__block" aria-labelledby="articles-title">
+      <h2 id="articles-title" class="press-page__title">{p.articlesTitle}</h2>
+      <ul role="list" class="articles">
+        {site.articles.map((a) => (
+          <li class="article">
+            <p class="article__meta">
+              {a.publication} · <time datetime={a.date}>{formatDate(a.date)}</time> · {a.author}
+            </p>
+            <h3 class="article__title" lang="sr">„{a.title}”</h3>
+            <p class="article__summary">{p.articleSummary}</p>
+            <a class="link-more" href={a.href} rel="noopener" target="_blank">{p.readArticle}<Icon name="arrow" size={18} /></a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  </div>
+
+  <section class="section section--stone interviews" aria-labelledby="interviews-title">
+    <div class="container">
+      <SectionHeading eyebrow={p.tvEyebrow} title={p.tvTitle} id="interviews-title" />
+      <p class="interviews__intro">{p.tvIntro}</p>
+      <ul role="list" class="interviews__grid" data-interviews>
+        {interviews.map((item, i) => (
+          <li data-extra={i >= FIRST ? "" : undefined}><InterviewCard item={item} /></li>
+        ))}
+      </ul>
+      {interviews.length > FIRST && (
+        <div class="interviews__more" hidden>
+          <button type="button" class="btn btn--outline" data-interviews-more>{p.showAll(interviews.length)}</button>
+        </div>
+      )}
+    </div>
+  </section>
+
+  <CelebritiesStrip id="worn-title" />
+
+  <div class="container press-page">
+    <section class="press-page__block press-page__contact" aria-labelledby="enquiries-title">
+      <h2 id="enquiries-title" class="press-page__title">{p.enquiriesTitle}</h2>
+      <p>{p.enquiriesText} <a href={`mailto:${site.pressEmail}`}>{site.pressEmail}</a>.</p>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .press-page {
+    padding-bottom: var(--section-y);
+  }
+  .press-page__feature {
+    padding-block: 48px var(--section-y);
+    border-top: 1px solid var(--sand-2);
+  }
+  .press-page__block {
+    padding-top: 48px;
+    border-top: 1px solid var(--sand-2);
+  }
+  .press-page__title {
+    margin-bottom: 28px;
+    font-family: var(--font-display);
+    font-weight: 300;
+    font-size: clamp(32px, 3vw, 40px);
+    line-height: 1.1;
+  }
+  .press-page__contact p {
+    font-size: 17px;
+    color: var(--text-2);
+  }
+  .press-page__contact a {
+    color: var(--ink);
+    border-bottom: 1px solid currentColor;
+  }
+
+  .articles {
+    display: grid;
+    gap: 40px;
+  }
+  .article {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+    max-width: 760px;
+  }
+  .article__meta {
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .article__title {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: clamp(28px, 2.6vw, 36px);
+    line-height: 1.2;
+  }
+  .article__summary {
+    font-size: 17px;
+    color: var(--text-2);
+  }
+
+  .interviews__intro {
+    max-width: 640px;
+    margin: -20px 0 44px;
+    font-size: 17px;
+    color: var(--text-2);
+  }
+  .interviews__grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 48px 24px;
+  }
+  /* With JS, only the first 6 (FIRST) show until "Show all" */
+  .interviews__grid.is-collapsed [data-extra] {
+    display: none;
+  }
+  .interviews__more {
+    display: flex;
+    justify-content: center;
+    margin-top: 56px;
+  }
+  .interviews__more[hidden] {
+    display: none;
+  }
+  @media (max-width: 1023px) {
+    .interviews__grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 40px 16px;
+    }
+  }
+  @media (max-width: 767px) {
+    .interviews__grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+</style>
+
+<script>
+  const list = document.querySelector<HTMLElement>("[data-interviews]");
+  const more = document.querySelector<HTMLButtonElement>("[data-interviews-more]");
+  if (list && more) {
+    list.classList.add("is-collapsed");
+    more.parentElement!.hidden = false;
+    more.addEventListener("click", () => {
+      list.classList.remove("is-collapsed");
+      more.parentElement?.remove();
+      list.querySelector<HTMLAnchorElement>("[data-extra] a")?.focus();
+    });
+  }
+</script>

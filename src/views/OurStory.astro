@@ -1,0 +1,267 @@
+---
+import { Image } from 'astro:assets';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHeader from '../components/PageHeader.astro';
+import SectionHeading from '../components/SectionHeading.astro';
+import Photo from '../components/Photo.astro';
+import VideoCard from '../components/VideoCard.astro';
+import Icon from '../components/Icon.astro';
+import { site } from '../../config/site';
+import { useI18n } from '../i18n';
+import crown from '../assets/brand/crown-black.png';
+import founderPhoto from '../assets/media/danijela-cover.jpg';
+import posterCorset from '../assets/media/posters/corset.jpg';
+import posterEarrings from '../assets/media/posters/earrings.jpg';
+import posterBag from '../assets/media/posters/bag.jpg';
+import posterSmoke from '../assets/media/posters/black-smoke.jpg';
+
+const { t, l } = useI18n(Astro);
+const s = t.story;
+
+const looks = Object.values(
+  import.meta.glob<{ default: ImageMetadata }>('../assets/media/lookbook/*.jpg', { eager: true }),
+).map((m) => m.default);
+
+const films = [
+  { src: '/media/films/corset.mp4', poster: posterCorset, title: s.films.corset },
+  { src: '/media/films/earrings.mp4', poster: posterEarrings, title: s.films.earrings },
+  { src: '/media/films/bag.mp4', poster: posterBag, title: s.films.bag },
+];
+---
+
+<BaseLayout title={s.title} description={s.description(site.founded, site.founder)} ogImage={looks[0]}>
+  <div class="container">
+    <PageHeader title={s.title} intro={s.intro} breadcrumb={[{ label: t.common.home, href: l('/') }, { label: s.title }]} />
+  </div>
+
+  <!-- Founder -->
+  <section class="section section--stone" aria-labelledby="founder-title">
+    <div class="container split">
+      <Photo src={founderPhoto} alt={s.founderAlt} ratio="3/4" tone="sand-2" sizes="(min-width: 768px) 45vw, 100vw" />
+      <div class="split__text">
+        <p class="eyebrow">{s.founderEyebrow}</p>
+        <h2 id="founder-title" class="h-section">{site.founder}</h2>
+        <p class="lead">{t.home.atelierText(site.founded, site.founder)}</p>
+        <p class="lead">{s.aboutPlaceholder}</p>
+        <a class="link-more" href={`${l('/fashion-show/')}#her-story`}>{s.watchHerStory}<Icon name="arrow" size={18} /></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Lota letter -->
+  <section class="section lota" aria-labelledby="lota-title">
+    <div class="container lota__inner">
+      <p class="eyebrow">{s.lotaEyebrow}</p>
+      <h2 id="lota-title" class="h-section">{s.lotaTitle}</h2>
+      <div class="lota__body">
+        {s.lota.map((p, i) => <p class:list={{ 'lota__closing': i === s.lota.length - 1 }}>{p}</p>)}
+      </div>
+      <p class="lota__sign"><span>{s.lotaSign}</span> Danijela</p>
+    </div>
+  </section>
+
+  <!-- Films -->
+  <section class="section films on-dark" aria-labelledby="films-title">
+    <div class="container">
+      <SectionHeading eyebrow={s.filmsEyebrow} title={s.filmsTitle} id="films-title" />
+      <div class="films__grid">
+        {films.map((f) => <VideoCard src={f.src} poster={f.poster} title={f.title} />)}
+      </div>
+      <VideoCard
+        class="films__wide"
+        src="/media/films/black-smoke.mp4"
+        poster={posterSmoke}
+        title={s.films.blackSmoke}
+        orientation="landscape"
+      />
+    </div>
+  </section>
+
+  <!-- Lookbook -->
+  <section class="section" aria-labelledby="lookbook-title">
+    <div class="container">
+      <SectionHeading eyebrow={s.lookbookEyebrow} title={s.lookbookTitle} id="lookbook-title" />
+      <ul role="list" class="looks">
+        {looks.map((img, i) => (
+          <li>
+            <Photo
+              src={img}
+              alt={`${s.lookAlt} ${i + 1}`}
+              ratio="3/4"
+              sizes="(min-width: 1024px) 25vw, 50vw"
+              widths={[360, 540, 720, 1080]}
+            />
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <!-- Atelier -->
+  <section class="section section--stone atelier" aria-labelledby="atelier-title">
+    <div class="container atelier__inner">
+      <Image src={crown} alt="" width={84} densities={[1, 2]} class="atelier__crown" />
+      <p class="eyebrow">{s.atelierEyebrow}</p>
+      <h2 id="atelier-title" class="h-section">{s.atelierTitle}</h2>
+      <p class="lead">{s.atelierPlaceholder}</p>
+      <dl class="stats">
+        {site.stats.map((st) => (
+          <div>
+            <dt>{t.stats[st.label] ?? st.label}</dt>
+            <dd>{st.value}</dd>
+          </div>
+        ))}
+      </dl>
+      <div class="atelier__links">
+        <a class="link-more" href={l('/collections/')}>{s.exploreCollections}<Icon name="arrow" size={18} /></a>
+        <a class="link-more" href={l('/press/')}>{t.press.pageTitle}<Icon name="arrow" size={18} /></a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .split {
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+    align-items: center;
+    gap: clamp(40px, 6vw, 104px);
+  }
+  .split__text {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 22px;
+  }
+  .split__text .h-section {
+    margin-top: -4px;
+  }
+
+  .lota__inner {
+    max-width: calc(720px + 2 * var(--gutter));
+    text-align: center;
+  }
+  .lota .h-section {
+    margin: 18px 0 40px;
+  }
+  .lota__body {
+    display: flex;
+    flex-direction: column;
+    gap: 1.1em;
+    text-align: left;
+    font-size: 17px;
+    line-height: 1.8;
+    color: var(--text-2);
+  }
+  .lota__closing {
+    margin-top: 0.6em;
+    text-align: center;
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 26px;
+    line-height: 1.35;
+    color: var(--ink);
+  }
+  .lota__sign {
+    margin-top: 28px;
+    font-family: var(--font-display);
+    font-size: 30px;
+    font-style: italic;
+  }
+  .lota__sign span {
+    display: block;
+    font-family: var(--font-body);
+    font-style: normal;
+    font-size: 11px;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .films {
+    background: var(--onyx);
+    color: var(--ivory);
+  }
+  .films__grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 24px;
+  }
+  .films :global(.films__wide) {
+    margin-top: 48px;
+  }
+
+  .looks {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  .atelier__inner {
+    max-width: calc(760px + 2 * var(--gutter));
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 22px;
+    text-align: center;
+  }
+  .atelier :global(.atelier__crown) {
+    width: 84px;
+    height: auto;
+    margin-bottom: 12px;
+  }
+  .stats {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 24px 72px;
+    margin: 30px 0 22px;
+  }
+  .stats div {
+    display: flex;
+    flex-direction: column-reverse;
+  }
+  .stats dd {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 46px;
+    line-height: 1;
+  }
+  .stats dt {
+    margin-top: 10px;
+    font-size: 11px;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .atelier__links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 16px 40px;
+  }
+
+  @media (max-width: 1023px) {
+    .looks {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+  @media (max-width: 767px) {
+    .split {
+      grid-template-columns: 1fr;
+    }
+    .films__grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+    .films__grid :global(.vcard:last-child) {
+      grid-column: 1 / -1;
+      max-width: 60%;
+      justify-self: center;
+    }
+    .looks {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+  }
+</style>

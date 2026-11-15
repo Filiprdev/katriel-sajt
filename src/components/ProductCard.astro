@@ -1,0 +1,65 @@
+---
+import Photo from './Photo.astro';
+import { formatPrice, productUrl, type Product } from '../lib/catalog';
+import { useI18n } from '../i18n';
+
+interface Props {
+  product: Product;
+  ratio?: '3/4' | '1/1';
+  tone?: 'sand' | 'sand-2';
+  /** Name size: 'md' (23–24px, grids) or 'sm' (22px, related products). */
+  size?: 'md' | 'sm';
+  loading?: 'lazy' | 'eager';
+}
+
+const { product, ratio = '3/4', tone = 'sand', size = 'md', loading = 'lazy' } = Astro.props;
+const { t, lang } = useI18n(Astro);
+const { name, images } = product.data;
+const image = images.find((i) => i.role === 'on-model') ?? images[0];
+---
+
+<a class:list={['card', `card--${size}`]} href={productUrl(product, lang)}>
+  <Photo
+    src={image?.src}
+    alt={image?.alt ?? ''}
+    label={`${t.common.photo} · ${name}`}
+    ratio={ratio}
+    tone={tone}
+    loading={loading}
+  />
+  <span class="card__text">
+    <span class="card__name">{name}</span>
+    <span class="card__price">{formatPrice(product, lang)}</span>
+  </span>
+</a>
+
+<style>
+  .card {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    min-width: 0;
+  }
+  .card--sm {
+    gap: 16px;
+  }
+  .card__text {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .card__name {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 23px;
+    line-height: 1.15;
+  }
+  .card--sm .card__name {
+    font-size: 22px;
+  }
+  .card__price {
+    font-size: 14px;
+    font-weight: 400;
+    letter-spacing: 0.06em;
+  }
+</style>

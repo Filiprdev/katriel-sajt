@@ -1,0 +1,160 @@
+---
+/**
+ * Video with a poster and a large play button. Nothing downloads until play
+ * (preload="none"). Without JS the native controls still work.
+ * Videos live in public/media/ (see scripts/encode-videos.sh); posters in src/assets/media/posters/.
+ */
+import { getImage } from 'astro:assets';
+import { useI18n } from '../i18n';
+
+interface Props {
+  /** Public path, e.g. /media/show/runway.mp4 */
+  src: string;
+  poster: ImageMetadata;
+  title: string;
+  caption?: string;
+  /** Visually hide the caption (still announced). */
+  hideCaption?: boolean;
+  orientation?: 'portrait' | 'landscape';
+  /** Exact frame ratio (e.g. '1/1', '3/4'); overrides the orientation's 9/16 or 16/9. */
+  ratio?: string;
+  id?: string;
+  class?: string;
+}
+
+const { src, poster, title, caption, hideCaption = false, orientation = 'portrait', ratio, id, class: className } = Astro.props;
+const { t } = useI18n(Astro);
+const posterImg = await getImage({ src: poster, width: Math.min(poster.width, orientation === 'portrait' ? 720 : 1280), format: 'webp' });
+---
+
+<figure id={id} class:list={['vcard', `vcard--${orientation}`, className]} data-video>
+  <div class="vcard__frame" style={ratio ? `aspect-ratio: ${ratio}` : undefined}>
+    <video
+      controls
+      preload="none"
+      playsinline
+      poster={posterImg.src}
+      width={posterImg.attributes.width}
+      height={posterImg.attributes.height}
+      aria-label={title}
+    >
+      <source src={src} type="video/mp4" />
+    </video>
+    <button type="button" class="vcard__play" data-video-play hidden>
+      <span class="vcard__icon" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z" /></svg>
+      </span>
+      <span class="visually-hidden">{t.common.play}: {title}</span>
+    </button>
+  </div>
+  <figcaption class:list={['vcard__caption', { 'visually-hidden': hideCaption }]}>
+    <span class="vcard__title">{title}</span>
+    {caption && <span class="vcard__text">{caption}</span>}
+  </figcaption>
+</figure>
+
+<style>
+  .vcard {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin: 0;
+    min-width: 0;
+  }
+  .vcard__frame {
+    position: relative;
+    background: var(--black);
+    overflow: hidden;
+  }
+  .vcard--portrait .vcard__frame {
+    aspect-ratio: 9 / 16;
+  }
+  .vcard--landscape .vcard__frame {
+    aspect-ratio: 16 / 9;
+  }
+  video {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    background: var(--black);
+  }
+  .vcard__play {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 0;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0) 45%);
+    color: var(--ivory);
+    cursor: pointer;
+  }
+  .vcard__play[hidden] {
+    display: none;
+  }
+  .vcard__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 68px;
+    height: 68px;
+    padding-left: 4px;
+    border: 1px solid rgba(246, 242, 236, 0.85);
+    border-radius: 50%;
+    background: rgba(14, 13, 12, 0.35);
+    transition: transform 0.2s ease, background 0.2s ease;
+  }
+  .vcard__play:hover .vcard__icon,
+  .vcard__play:focus-visible .vcard__icon {
+    transform: scale(1.06);
+    background: rgba(14, 13, 12, 0.6);
+  }
+  .vcard__play:focus-visible {
+    outline: 1px solid var(--ivory);
+    outline-offset: -6px;
+  }
+  .vcard__caption {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .vcard__title {
+    font-family: var(--font-display);
+    font-size: 24px;
+    line-height: 1.2;
+  }
+  .vcard__text {
+    font-size: 14px;
+    color: var(--muted);
+  }
+  :global(.on-dark) .vcard__text {
+    color: var(--muted-dark);
+  }
+</style>
+
+<script>
+  // Big play button over the poster; only one video plays at a time.
+  const cards = document.querySelectorAll<HTMLElement>('[data-video]');
+  const videos: HTMLVideoElement[] = [];
+  cards.forEach((card) => {
+    const video = card.querySelector('video');
+    const btn = card.querySelector<HTMLButtonElement>('[data-video-play]');
+    if (!video || !btn) return;
+    videos.push(video);
+    video.controls = false;
+    btn.hidden = false;
+    btn.addEventListener('click', () => {
+      btn.hidden = true;
+      video.controls = true;
+      video.play();
+      video.focus();
+    });
+    video.addEventListener('play', () => {
+      btn.hidden = true;
+      video.controls = true;
+      videos.forEach((v) => v !== video && !v.paused && v.pause());
+    });
+  });
+</script>

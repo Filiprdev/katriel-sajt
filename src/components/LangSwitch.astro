@@ -1,0 +1,53 @@
+---
+/** EN / SR switch. Links to the same page in the other language. */
+import { useI18n, localizePath, languages, type Lang } from '../i18n';
+
+interface Props {
+  class?: string;
+}
+const { class: className } = Astro.props;
+const { lang, t, path } = useI18n(Astro);
+const langs = Object.keys(languages) as Lang[];
+---
+
+<nav class:list={['lang', className]} aria-label={t.common.language}>
+  {langs.map((code, i) => (
+    <>
+      {i > 0 && <span class="lang__sep" aria-hidden="true">/</span>}
+      {code === lang ? (
+        <span class="lang__item lang__item--current" aria-current="true" lang={code}>{code.toUpperCase()}</span>
+      ) : (
+        <a class="lang__item" href={localizePath(path, code)} hreflang={code} lang={code} title={languages[code]}>
+          {code.toUpperCase()}
+        </a>
+      )}
+    </>
+  ))}
+</nav>
+
+<style>
+  .lang {
+    display: inline-flex;
+    align-items: center;
+    font-size: 12px;
+    font-weight: 400;
+    letter-spacing: 0.16em;
+  }
+  .lang__item {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    min-height: 44px;
+    opacity: 0.6;
+  }
+  .lang__item--current {
+    opacity: 1;
+  }
+  a.lang__item:hover {
+    opacity: 1;
+  }
+  .lang__sep {
+    opacity: 0.4;
+  }
+</style>

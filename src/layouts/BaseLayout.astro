@@ -1,0 +1,113 @@
+---
+import '@fontsource/cormorant-garamond/300.css';
+import '@fontsource/cormorant-garamond/400.css';
+import '@fontsource/cormorant-garamond/500.css';
+import '@fontsource/cormorant-garamond/300-italic.css';
+import '@fontsource/cormorant-garamond/400-italic.css';
+import '@fontsource/jost/300.css';
+import '@fontsource/jost/400.css';
+import '../styles/tokens.css';
+import '../styles/base.css';
+
+import { getImage } from 'astro:assets';
+import AnnouncementBar from '../components/AnnouncementBar.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import { site } from '../../config/site';
+import { useI18n, localizePath, languages, ogLocale, type Lang } from '../i18n';
+import defaultOg from '../assets/brand/cover_katriel.jpg';
+import favicon from '../assets/brand/crown-black.png';
+
+interface Props {
+  /** Page title without the brand suffix. Omit on the home page. */
+  title?: string;
+  description?: string;
+  /** Imported image (ImageMetadata) for og:image. Defaults to the cover photo. */
+  ogImage?: ImageMetadata;
+  ogType?: 'website' | 'product' | 'article';
+  /** Header sits transparently over the first section (home hero). */
+  headerOverlay?: boolean;
+  /** Category slug to highlight in the main nav. */
+  currentCategory?: string;
+  noindex?: boolean;
+  /** Single-row footer (shop and product pages). */
+  compactFooter?: boolean;
+}
+
+const { t, lang, path } = useI18n(Astro);
+const {
+  title,
+  description = t.meta.description,
+  ogImage = defaultOg,
+  ogType = 'website',
+  headerOverlay = false,
+  currentCategory,
+  noindex = false,
+  compactFooter = false,
+} = Astro.props;
+
+const base = Astro.site ?? site.url;
+const fullTitle = title ? `${title} | ${site.name}` : t.meta.homeTitle;
+const canonical = new URL(Astro.url.pathname, base).href;
+const alternates = (Object.keys(languages) as Lang[]).map((code) => ({
+  code,
+  href: new URL(localizePath(path, code), base).href,
+}));
+
+const og = await getImage({ src: ogImage, width: 1200, height: 630, fit: 'cover', format: 'jpg' });
+const ogUrl = new URL(og.src, base).href;
+const icon32 = await getImage({ src: favicon, width: 32, height: 32, fit: 'contain', format: 'png' });
+const icon180 = await getImage({ src: favicon, width: 180, height: 180, fit: 'contain', format: 'png' });
+---
+
+<!doctype html>
+<html lang={lang === 'sr' ? 'sr-Latn' : 'en'}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    {!noindex && alternates.map((a) => <link rel="alternate" hreflang={a.code} href={a.href} />)}
+    {!noindex && <link rel="alternate" hreflang="x-default" href={alternates[0].href} />}
+    {noindex && <meta name="robots" content="noindex" />}
+
+    <link rel="icon" type="image/png" sizes="32x32" href={icon32.src} />
+    <link rel="apple-touch-icon" href={icon180.src} />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    <meta name="theme-color" content="#0E0D0C" />
+
+    <meta property="og:site_name" content={site.legalName} />
+    <meta property="og:locale" content={ogLocale[lang]} />
+    <meta property="og:type" content={ogType} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogUrl} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <slot name="head" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">{t.common.skip}</a>
+    <AnnouncementBar />
+    <div class="masthead">
+      <Header overlay={headerOverlay} current={currentCategory} />
+    </div>
+    <main id="main" tabindex="-1">
+      <slot />
+    </main>
+    <Footer compact={compactFooter} />
+  </body>
+</html>
+
+<style>
+  .masthead {
+    position: relative;
+  }
+  main:focus {
+    outline: none;
+  }
+</style>

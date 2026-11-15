@@ -1,0 +1,122 @@
+---
+/** "As featured in Vogue" block (home, /press/). The Vogue name is set in the display serif, never the logo. */
+import Photo from './Photo.astro';
+import Icon from './Icon.astro';
+import { site } from '../../config/site';
+import { useI18n } from '../i18n';
+// Temporary cover until the Vogue tear sheet / editorial photo arrives (necklace "Stefy" campaign photo).
+import pressCover from '../assets/brand/press-cover.jpg';
+
+interface Props {
+  id?: string;
+  /** Where the button goes. Default: the Vogue feature itself. The home page sends it to /press/. */
+  link?: { href: string; label: string };
+}
+const { id = 'vogue-title', link } = Astro.props;
+const { t } = useI18n(Astro);
+const { press } = site;
+const cta = link ?? { href: press.href, label: t.press.readFeature };
+---
+
+<div class="press">
+  <div class="press__media">
+    <Photo
+      src={pressCover}
+      alt={t.press.photoAlt}
+      ratio="4/5"
+      sizes="(min-width: 900px) 45vw, 100vw"
+      widths={[480, 720, 960, 1200]}
+      class="press__photo"
+    />
+  </div>
+  <div class="press__text">
+    <p class="eyebrow">{t.press.eyebrow}</p>
+    <p class="press__kicker">{t.press.featuredIn}</p>
+    <h2 id={id} class="press__title">{press.publication}</h2>
+    <blockquote class="press__quote">“{press.quote}”</blockquote>
+    <p class="press__meta">{press.edition} · {press.date}</p>
+    <a class="link-more press__link" href={cta.href}>{cta.label}<Icon name="arrow" size={18} /></a>
+    <div class="press__also">
+      <span class="press__also-label">{t.press.alsoSeenIn}</span>
+      {press.alsoSeenIn.map((name) => <span class="press__also-name">{name}</span>)}
+    </div>
+  </div>
+</div>
+
+<style>
+  .press {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: clamp(40px, 6vw, 104px);
+  }
+  .press__media,
+  .press__text {
+    flex: 1 1 420px;
+    min-width: 0;
+  }
+  .press :global(.press__photo) {
+    outline: 1px solid #d3cabd;
+    outline-offset: -14px;
+    padding: 22px;
+  }
+  .press__kicker {
+    margin-top: 26px;
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 34px;
+    line-height: 1.2;
+    color: var(--text-2);
+  }
+  .press__title {
+    margin-top: 4px;
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: clamp(88px, 10vw, 150px);
+    line-height: 0.9;
+    letter-spacing: 0.01em;
+  }
+  .press__quote {
+    max-width: 520px;
+    margin-top: 44px;
+    font-family: var(--font-display);
+    font-weight: 300;
+    font-size: 30px;
+    line-height: 1.35;
+  }
+  .press__meta {
+    margin-top: 18px;
+    font-size: 12px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .press__link {
+    margin-top: 28px;
+  }
+  .press__also {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 10px 28px;
+    margin-top: 52px;
+    padding-top: 26px;
+    border-top: 1px solid #d3cabd;
+  }
+  .press__also-label {
+    font-size: 11px;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .press__also-name {
+    font-family: var(--font-display);
+    font-size: 21px;
+    color: var(--text-2);
+  }
+  @media (max-width: 767px) {
+    .press__quote {
+      font-size: 26px;
+    }
+  }
+</style>

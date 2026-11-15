@@ -1,0 +1,42 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHeader from '../components/PageHeader.astro';
+import CategoryTabs from '../components/CategoryTabs.astro';
+import ShopListing from '../components/ShopListing.astro';
+import { getProducts, getCategories, productsIn, categoryName, categoryIntro, type Category } from '../lib/catalog';
+import { useI18n } from '../i18n';
+
+interface Props {
+  category: Category;
+}
+const { category } = Astro.props;
+const { t, l, lang } = useI18n(Astro);
+const categories = await getCategories();
+const products = productsIn(await getProducts(), category.id);
+const name = categoryName(category, lang);
+const intro = categoryIntro(category, lang);
+const description =
+  category.data.description ?? t.shop.categoryDescription(name, intro.startsWith('[') ? '' : intro).replace(/\s+/g, ' ');
+---
+
+<BaseLayout title={name} description={description} currentCategory={category.id} compactFooter>
+  <div class="container shop">
+    <PageHeader
+      title={name}
+      intro={intro}
+      breadcrumb={[
+        { label: t.common.home, href: l('/') },
+        { label: t.shop.title, href: l('/shop/') },
+        { label: name },
+      ]}
+    />
+    <CategoryTabs categories={categories} current={category.id} />
+    <ShopListing products={products} />
+  </div>
+</BaseLayout>
+
+<style>
+  .shop {
+    padding-bottom: var(--section-y);
+  }
+</style>

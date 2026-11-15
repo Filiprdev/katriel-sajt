@@ -1,0 +1,68 @@
+---
+/** Text pages: breadcrumb, H1 + intro, then a readable column. */
+import BaseLayout from './BaseLayout.astro';
+import PageHeader from '../components/PageHeader.astro';
+import { useI18n } from '../i18n';
+
+interface Props {
+  title: string;
+  description: string;
+  intro?: string;
+  /** Narrow single text column (legal pages) or full container width. */
+  width?: 'text' | 'wide';
+}
+const { title, description, intro, width = 'text' } = Astro.props;
+const { t, l } = useI18n(Astro);
+---
+
+<BaseLayout title={title} description={description}>
+  <div class="container info">
+    <PageHeader title={title} intro={intro} breadcrumb={[{ label: t.common.home, href: l('/') }, { label: title }]} />
+    <div class:list={['info__body', { 'info__body--text': width === 'text' }]}>
+      <slot />
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .info {
+    padding-bottom: var(--section-y);
+  }
+  .info__body {
+    padding-top: 48px;
+    border-top: 1px solid var(--sand-2);
+  }
+  .info__body--text > :global(*) {
+    max-width: 720px;
+  }
+
+  /* Prose */
+  .info__body :global(h2) {
+    margin: 56px 0 18px;
+    font-family: var(--font-display);
+    font-weight: 300;
+    font-size: clamp(32px, 3vw, 40px);
+    line-height: 1.1;
+  }
+  .info__body :global(h2:first-child) {
+    margin-top: 0;
+  }
+  .info__body :global(p),
+  .info__body :global(li) {
+    font-size: 17px;
+    color: var(--text-2);
+  }
+  .info__body :global(p + p) {
+    margin-top: 1em;
+  }
+  .info__body :global(ul:not([role='list'])),
+  .info__body :global(ol:not([role='list'])) {
+    margin: 1em 0;
+    padding-left: 1.2em;
+  }
+  .info__body :global(p a:not(.btn)),
+  .info__body :global(li a:not(.btn)) {
+    color: var(--ink);
+    border-bottom: 1px solid currentColor;
+  }
+</style>

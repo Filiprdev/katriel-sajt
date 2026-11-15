@@ -1,0 +1,45 @@
+---
+import { useI18n } from '../i18n';
+
+interface Props {
+  /** Last item is the current page (no href). */
+  items: { label: string; href?: string }[];
+}
+const { items } = Astro.props;
+const { lang } = useI18n(Astro);
+---
+
+<nav class="breadcrumb" aria-label={lang === 'sr' ? 'Putanja' : 'Breadcrumb'}>
+  <ol role="list">
+    {items.map((item, i) => (
+      <li>
+        {item.href && i < items.length - 1 ? (
+          <a href={item.href}>{item.label}</a>
+        ) : (
+          <span aria-current="page">{item.label}</span>
+        )}
+        {i < items.length - 1 && <span class="breadcrumb__sep" aria-hidden="true">/</span>}
+      </li>
+    ))}
+  </ol>
+</nav>
+
+<style>
+  .breadcrumb ol {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    font-size: 11px;
+    line-height: 1.5;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .breadcrumb li {
+    display: flex;
+    gap: 10px;
+  }
+  .breadcrumb [aria-current] {
+    color: var(--ink);
+  }
+</style>

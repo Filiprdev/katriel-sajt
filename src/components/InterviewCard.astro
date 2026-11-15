@@ -1,0 +1,147 @@
+---
+/**
+ * One YouTube interview: local thumbnail + play button. Without JS it is a plain link to YouTube;
+ * with JS a click swaps in the youtube-nocookie player, so nothing from YouTube loads before that.
+ */
+import { getImage } from 'astro:assets';
+import type { Interview } from '../data/interviews';
+import { useI18n, intlLocale } from '../i18n';
+
+interface Props {
+  item: Interview;
+}
+
+const { item } = Astro.props;
+const { t, lang } = useI18n(Astro);
+const p = t.press;
+const img = await getImage({ src: item.thumb, widths: [480, 720, 960].filter((w) => w <= item.thumb.width), format: 'webp' });
+const date = new Intl.DateTimeFormat(intlLocale[lang], { month: 'long', year: 'numeric' }).format(new Date(item.date));
+const minutes = Math.max(1, Math.round(item.length / 60));
+const href = `https://www.youtube.com/watch?v=${item.id}`;
+---
+
+<article class="itv">
+  <div class="itv__frame" data-itv-frame>
+    <a class="itv__link" href={href} target="_blank" rel="noopener" data-yt={item.id} data-title={item.title}>
+      <img
+        src={img.src}
+        srcset={img.srcSet.attribute}
+        sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
+        width={img.attributes.width}
+        height={img.attributes.height}
+        alt=""
+        loading="lazy"
+        decoding="async"
+      />
+      <span class="itv__icon" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z" /></svg>
+      </span>
+      <span class="itv__len">{p.minutes(minutes)}</span>
+      <span class="visually-hidden">{p.play(item.title)}</span>
+    </a>
+  </div>
+  <p class="itv__meta">{item.channel} · <time datetime={item.date}>{date}</time></p>
+  <h3 class="itv__title" lang="sr">{item.title}</h3>
+</article>
+
+<style>
+  .itv {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+  }
+  .itv__frame {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    background: var(--black);
+    overflow: hidden;
+    margin-bottom: 6px;
+  }
+  .itv__frame :global(iframe) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+  }
+  .itv__link {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--ivory);
+  }
+  .itv__link img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.4s ease;
+  }
+  .itv__link:hover img {
+    transform: scale(1.03);
+  }
+  .itv__icon {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    padding-left: 3px;
+    border: 1px solid rgba(246, 242, 236, 0.85);
+    border-radius: 50%;
+    background: rgba(14, 13, 12, 0.45);
+    transition: background 0.2s ease, transform 0.2s ease;
+  }
+  .itv__link:hover .itv__icon,
+  .itv__link:focus-visible .itv__icon {
+    transform: scale(1.06);
+    background: rgba(14, 13, 12, 0.7);
+  }
+  .itv__link:focus-visible {
+    outline: 1px solid var(--ivory);
+    outline-offset: -6px;
+  }
+  .itv__len {
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+    padding: 3px 8px;
+    background: rgba(14, 13, 12, 0.75);
+    font-size: 12px;
+    letter-spacing: 0.06em;
+  }
+  .itv__meta {
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .itv__title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 22px;
+    line-height: 1.25;
+  }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLAnchorElement>('[data-yt]').forEach((link) =>
+    link.addEventListener('click', (e) => {
+      if (e.metaKey || e.ctrlKey || e.shiftKey) return;
+      e.preventDefault();
+      const frame = document.createElement('iframe');
+      frame.src = `https://www.youtube-nocookie.com/embed/${link.dataset.yt}?autoplay=1&rel=0`;
+      frame.title = link.dataset.title ?? 'YouTube';
+      frame.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen';
+      frame.allowFullscreen = true;
+      link.replaceWith(frame);
+      frame.focus();
+    }),
+  );
+</script>

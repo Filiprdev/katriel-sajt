@@ -1,0 +1,20 @@
+---
+import InfoLayout from '../layouts/InfoLayout.astro';
+import { site } from '../../config/site';
+import { useI18n } from '../i18n';
+
+const { t } = useI18n(Astro);
+const s = t.shipping;
+---
+
+<InfoLayout title={s.title} description={s.description}>
+  <h2>{s.shipping}</h2>
+  <p>{s.freeOver(site.freeShippingOver)}</p>
+  <p>{s.shippingPlaceholder}</p>
+
+  <h2>{s.payment}</h2>
+  <p>{s.paymentPlaceholder}</p>
+
+  <h2>{s.returns}</h2>
+  <p>{s.returnsPlaceholder}</p>
+</InfoLayout>

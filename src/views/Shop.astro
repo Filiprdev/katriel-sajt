@@ -1,0 +1,35 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHeader from '../components/PageHeader.astro';
+import CategoryTabs from '../components/CategoryTabs.astro';
+import ShopListing from '../components/ShopListing.astro';
+import { getProducts, getCategories } from '../lib/catalog';
+import { useI18n } from '../i18n';
+
+const { t, l } = useI18n(Astro);
+const products = await getProducts();
+const categories = await getCategories();
+// All products, grouped by category order, then manual order.
+const catOrder = new Map(categories.map((c) => [c.id, c.data.order]));
+const sorted = [...products].sort(
+  (a, b) => (catOrder.get(a.data.category.id) ?? 0) - (catOrder.get(b.data.category.id) ?? 0),
+);
+---
+
+<BaseLayout title={t.shop.title} description={t.shop.description} compactFooter>
+  <div class="container shop">
+    <PageHeader
+      title={t.shop.title}
+      intro={t.shop.intro}
+      breadcrumb={[{ label: t.common.home, href: l('/') }, { label: t.shop.title }]}
+    />
+    <CategoryTabs categories={categories} />
+    <ShopListing products={sorted} />
+  </div>
+</BaseLayout>
+
+<style>
+  .shop {
+    padding-bottom: var(--section-y);
+  }
+</style>

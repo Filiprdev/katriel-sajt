@@ -1,0 +1,62 @@
+---
+import { categoryName, type Category } from '../lib/catalog';
+import { useI18n } from '../i18n';
+
+interface Props {
+  categories: Category[];
+  current?: string;
+}
+const { categories, current } = Astro.props;
+const { t, l, lang } = useI18n(Astro);
+---
+
+<nav class="cat-tabs" aria-label={t.shop.categories}>
+  <ul role="list">
+    <li><a href={l('/shop/')} aria-current={!current ? 'page' : undefined}>{t.shop.all}</a></li>
+    {categories.map((c) => (
+      <li>
+        <a href={l(`/shop/${c.id}/`)} aria-current={c.id === current ? 'page' : undefined}>{categoryName(c, lang)}</a>
+      </li>
+    ))}
+  </ul>
+</nav>
+
+<style>
+  .cat-tabs {
+    border-bottom: 1px solid var(--sand-2);
+  }
+  .cat-tabs ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 34px;
+    font-weight: 400;
+    font-size: 12px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+  }
+  .cat-tabs a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--muted);
+    border-bottom: 1px solid transparent;
+    margin-bottom: -1px;
+  }
+  .cat-tabs a[aria-current='page'] {
+    color: var(--ink);
+    border-bottom-color: var(--ink);
+  }
+  @media (max-width: 599px) {
+    .cat-tabs ul {
+      flex-wrap: nowrap;
+      gap: 0 26px;
+      overflow-x: auto;
+      margin-inline: calc(-1 * var(--gutter));
+      padding-inline: var(--gutter);
+      scrollbar-width: none;
+    }
+    .cat-tabs li {
+      flex: none;
+    }
+  }
+</style>

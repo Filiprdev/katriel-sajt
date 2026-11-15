@@ -1,0 +1,63 @@
+---
+import InfoLayout from '../layouts/InfoLayout.astro';
+import OrderButtons from '../components/OrderButtons.astro';
+import { useI18n } from '../i18n';
+
+const { t } = useI18n(Astro);
+const h = t.howToOrder;
+---
+
+<InfoLayout title={h.title} description={h.description} intro={h.intro} width="wide">
+  <ol role="list" class="steps">
+    {h.steps.map((s, i) => (
+      <li class="step">
+        <span class="step__num" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
+        <h2 class="step__title">{s.title}</h2>
+        <p>{s.body}</p>
+      </li>
+    ))}
+  </ol>
+  <div class="cta">
+    <OrderButtons />
+  </div>
+</InfoLayout>
+
+<style>
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 40px 24px;
+  }
+  .step {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .step__num {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 40px;
+    line-height: 1;
+    color: var(--gold-text);
+  }
+  .step .step__title {
+    margin: 0;
+    font-size: 28px;
+  }
+  .step p {
+    font-size: 16px;
+  }
+  .cta {
+    margin-top: 64px;
+  }
+  @media (max-width: 1023px) {
+    .steps {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (max-width: 599px) {
+    .steps {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

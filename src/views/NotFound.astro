@@ -1,0 +1,41 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Icon from '../components/Icon.astro';
+import { useI18n } from '../i18n';
+
+const { t, l } = useI18n(Astro);
+const n = t.notFound;
+---
+
+<BaseLayout title={n.title} description={n.description} noindex>
+  <section class="section">
+    <div class="container not-found">
+      <p class="eyebrow">{n.eyebrow}</p>
+      <h1 class="h-page">{n.title}</h1>
+      <p class="lead">{n.text}</p>
+      <div class="not-found__actions">
+        <a class="btn btn--primary" href={l('/shop/clothing/')}>{t.home.shopClothing}</a>
+        <a class="btn btn--outline" href={l('/shop/jewelry/')}>{t.home.shopJewelry}</a>
+      </div>
+      <a class="link-more" href={l('/')}>{n.back}<Icon name="arrow" size={18} /></a>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .not-found {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 28px;
+    min-height: 50vh;
+  }
+  .not-found .lead {
+    max-width: 520px;
+  }
+  .not-found__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+</style>
