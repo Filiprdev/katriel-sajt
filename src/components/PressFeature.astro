@@ -4,18 +4,17 @@ import Photo from './Photo.astro';
 import Icon from './Icon.astro';
 import { site } from '../../config/site';
 import { useI18n } from '../i18n';
-// Temporary cover until the Vogue tear sheet / editorial photo arrives (necklace "Stefy" campaign photo).
-import pressCover from '../assets/brand/press-cover.jpg';
+import pressCover from '../assets/press/vogue-cover.jpg';
 
 interface Props {
   id?: string;
-  /** Where the button goes. Default: the Vogue feature itself. The home page sends it to /press/. */
+  /** Where the button goes. Default: the Vogue article further down /press/. */
   link?: { href: string; label: string };
 }
 const { id = 'vogue-title', link } = Astro.props;
-const { t } = useI18n(Astro);
+const { t, l } = useI18n(Astro);
 const { press } = site;
-const cta = link ?? { href: press.href, label: t.press.readFeature };
+const cta = link ?? { href: `${l('/press/')}#vogue-article`, label: t.press.readFeature };
 ---
 
 <div class="press">
@@ -33,8 +32,8 @@ const cta = link ?? { href: press.href, label: t.press.readFeature };
     <p class="eyebrow">{t.press.eyebrow}</p>
     <p class="press__kicker">{t.press.featuredIn}</p>
     <h2 id={id} class="press__title">{press.publication}</h2>
-    <blockquote class="press__quote">“{press.quote}”</blockquote>
-    <p class="press__meta">{press.edition} · {press.date}</p>
+    <p class="press__quote">{t.press.vogueLead}</p>
+    <p class="press__meta">{t.press.vogueCredit}</p>
     <a class="link-more press__link" href={cta.href}>{cta.label}<Icon name="arrow" size={18} /></a>
     <div class="press__also">
       <span class="press__also-label">{t.press.alsoSeenIn}</span>

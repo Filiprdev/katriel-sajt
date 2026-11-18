@@ -35,10 +35,7 @@ export const site = {
   /** Press feature on the home page and /press/. */
   press: {
     publication: 'Vogue',
-    quote: '[PLACEHOLDER: short quote from the Vogue feature]',
-    edition: '[Vogue edition]',
-    date: '[Month Year]',
-    href: '#', // [PLACEHOLDER] link to the feature
+    photographer: { name: 'Paspartu Photography', href: 'https://www.paspartuphotography.com', instagram: 'paspartu_photography' },
     alsoSeenIn: ['Press Serbia', 'Shine Magazine', 'Pink TV', 'Red TV', 'Stories Within Us'],
   },
 
